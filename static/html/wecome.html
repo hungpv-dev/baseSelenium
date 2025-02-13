@@ -1,0 +1,19 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <h1>Welcome to My Desktop Application!</h1>
+    <p>This is a desktop app using HTML/CSS interface.</p>
+    <button id="helloButton">
+        HELLO
+    </button>
+
+    <script type="text/javascript">
+        document.getElementById("helloButton").onclick = function() {
+            fetch('/api/hello')
+                .then(response => response.json())
+                .then(data => alert(data.message));
+        };
+    </script>
+{% endblock %}
