@@ -1,18 +1,14 @@
 import webview
 from threading import Thread
-from routes.index import app
+from server import create_app, start_app
 
-def start_server():
-    # Kích hoạt chế độ debug và tắt reloader
-    app.run(debug=True, use_reloader=False)
+app = create_app()
 
-# Khởi động Flask server trong một luồng riêng
-server_thread = Thread(target=start_server)
-server_thread.daemon = True
-server_thread.start()
 
-# Tạo cửa sổ ứng dụng với nội dung HTML từ Flask
-webview.create_window('Asfy Tech', 'http://127.0.0.1:5000')
+if __name__ == '__main__':
+    server_thread = Thread(target=start_app,args=app,)
+    server_thread.daemon = True
+    server_thread.start()
 
-# Chạy ứng dụng webview
-webview.start()
+    webview.create_window('Asfy Tech', 'http://127.0.0.1:5000')
+    webview.start()

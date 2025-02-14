@@ -1,0 +1,5 @@
+flasks
+selenium
+pywebview
+PySide6
+qtpy

@@ -1,5 +1,5 @@
 import unittest
-from routes.api import app
+from server.api import app
 
 class TestApp(unittest.TestCase):
     def setUp(self):
