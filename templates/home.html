@@ -8,6 +8,9 @@
     <button id="helloButton">
         HELLO
     </button>
+    <button id="start">
+        Start Browser
+    </button>
 
     <script type="text/javascript">
         document.getElementById("helloButton").onclick = function() {
@@ -15,5 +18,10 @@
                 .then(response => response.json())
                 .then(data => alert(data.message));
         };
+        document.getElementById('start').onclick = function(){
+            fetch('/driver/start')
+                .then(response => response.json())
+                .then(data => console.log(data));
+        }
     </script>
 {% endblock %}

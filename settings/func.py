@@ -3,12 +3,6 @@ import json
 def dd(data):
     print(json.dumps(data, indent=4, ensure_ascii=False))
 
-def load_file(path):
-    file_content = ''
-    with open(path, 'r') as file:
-        file_content = file.read() 
-    return file_content
-
 def config(key = None, defaultValue = None):
     settings = {}
     try:

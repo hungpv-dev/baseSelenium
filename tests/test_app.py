@@ -1,5 +1,5 @@
 import unittest
-from server.api import app
+from server.driver import app
 
 class TestApp(unittest.TestCase):
     def setUp(self):
