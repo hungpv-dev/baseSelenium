@@ -6,7 +6,7 @@ app = create_app()
 
 
 if __name__ == '__main__':
-    server_thread = Thread(target=start_app,args=app,)
+    server_thread = Thread(target=start_app,args=(app,))
     server_thread.daemon = True
     server_thread.start()
 
