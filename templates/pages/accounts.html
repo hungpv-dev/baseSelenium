@@ -43,35 +43,8 @@
                             </tr>
                         </thead>
 
-                        <tbody>
-                            {% for acc in list_accounts %}
-                            <tr class="text-xs">
-                                <td class="px-0 text-center align-middle">
-                                    {{ acc.id }}
-                                </td>
-                                <td class="px-0 text-start align-middle">
-                                    {{ acc.name }}
-                                </td>
-                                <td class="px-0 text-start align-middle">
-                                    {% if acc.status == 1 %}
-                                    <span class="badge badge-sm bg-gradient-success">Đang hoạt động</span>
-                                    {% else %}
-                                    <span class="badge badge-sm bg-gradient-danger">Không hoạt động</span>
-                                    {% endif %}
-                                </td>
-                                <td class="align-middle text-end ps-1">
-                                    <!-- Nếu đang chạy thì hiển thị nút "Tắt" -->
-                                    <button
-                                        data-start="{% if acc.is_browse_link_fb == 1 %}true{% else %}false{% endif %}"
-                                        class="btn btn-sm btn-config btn-actions {% if acc.is_browse_link_fb == 1 %}text-danger{% else %}text-info{% endif %}"
-                                        data-id="{{ acc.id }}">
-                                        <i
-                                            class="fas {% if acc.is_browse_link_fb == 1 %}fa-pause{% else %}fa-play{% endif %}"></i>
-                                    </button>
-                                </td>
+                        <tbody id="tbody-accounts">
 
-                            </tr>
-                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -81,8 +54,45 @@
 </div>
 {% endblock %}
 {% block script %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
+    $(document).ready(function () {
+        getData()
+        async function getData() {
+            let res = await axios.get('/api/accounts')
+            if (res.status == 200) {
+                let data = res.data;
+                let content = data.map(function (item) {
+                    return `
+                        <tr class="text-xs">
+                            <td class="px-0 text-center align-middle">
+                                ${item.id}
+                            </td>
+                            <td class="px-0 text-start align-middle">
+                                ${item.name}
+                            </td>
+                            <td class="px-0 text-start align-middle">
+                                ${item.status == 1 ? `
+                                    <span class="badge badge-sm bg-gradient-success">Đang hoạt động</span>
+                                ` : `
+                                    <span class="badge badge-sm bg-gradient-danger">Không hoạt động</span>
+                                `}
+                            </td>
+                            <td class="align-middle text-end ps-1">
+                                <!-- Nếu đang chạy thì hiển thị nút "Tắt" -->
+                                <button
+                                    data-start="${item.is_browse_link_fb == 1 ? 'false' : 'true'}"
+                                    class="btn btn-sm btn-config btn-actions ${item.is_browse_link_fb == 1 ? 'text-danger' : 'text-info'}"
+                                    data-id="${item.id}">
+                                    <span class="fas ${item.is_browse_link_fb == 1 ? 'fa-pause' : 'fa-play'}"></span>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                })
+                $('#tbody-accounts').html(content)
+            }
+        }
+    })
     const handleBrowse = {
         'start': function (id) {
             let api = `/spy-browse/start/${id}`
@@ -101,30 +111,31 @@
         let textBtn = ``
         let classBtn = ``
         $(this).removeClass('text-danger text-info')
-        // btnLoading(btn, true)
+        $(this).html('<span class="spinner-border spinner-border-sm"></span>')
         if (start == 'true') {
             try {
-                // let res = await handleBrowse.start(accountId)
-                textBtn = `<i class='fas fa-stop'></i>`
+                let res = await handleBrowse.start(accountId)
+                textBtn = `<span class='fas fa-stop'></span>`
                 $(this).attr('data-start', 'false')
                 classBtn = 'text-danger'
             } catch (e) {
                 console.log(e);
                 classBtn = 'text-info'
-                textBtn = `<i class='fas fa-play'></i>`
+                textBtn = `<span class='fas fa-play'></span>`
             }
         } else {
             try {
-                // let res = await handleBrowse.stop(accountId)
-                textBtn = `<i class='fas fa-play'></i>`
+                let res = await handleBrowse.stop(accountId)
+                textBtn = `<span class='fas fa-play'></span>`
                 $(this).attr('data-start', 'true')
                 classBtn = 'text-info'
             } catch (e) {
                 console.log(e)
                 classBtn = 'text-danger'
-                textBtn = `<i class='fas fa-stop'></i>`
+                textBtn = `<span class='fas fa-stop'></span>`
             }
         }
+        await new Promise((resolve, reject) => setTimeout(resolve, 3000))
         $(this).html(textBtn)
         $(this).addClass(classBtn)
         // btnLoading(btn, false, textBtn)

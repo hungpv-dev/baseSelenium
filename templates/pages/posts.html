@@ -35,26 +35,8 @@
                             </tr>
                         </thead>
 
-                        <tbody>
-                            {% for post in list_posts %}
-                            <tr class="text-xs">
-                                <td class="text-center align-middle">
-                                    {{ post.id }}
-                                </td>
-                                <td class="text-start align-middle">
-                                    {{ post.fb_link }}
-                                </td>
-                                <td class="text-start align-middle">
-                                    {{ post.created_at }}
-                                </td>
-                                <td class="align-middle text-center pe-1">
-                                    <a href="{{ post.fb_link }}" class="btn-facebook" target="_blank"
-                                        class="text-secondary font-weight-bold text-xs">
-                                        <i class="fab fa-facebook"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody id="tbody-posts">
+
                         </tbody>
                     </table>
                 </div>
@@ -64,4 +46,37 @@
 </div>
 {% endblock %}
 {% block script %}
+<script>
+    $(document).ready(function () {
+        getData()
+        async function getData() {
+            let res = await axios.get('/api/posts')
+            if (res.status == 200) {
+                let data = res.data.list_posts;
+                let content = data.map(function (item) {
+                    return `
+                        <tr class="text-xs">
+                            <td class="text-center align-middle">
+                                ${item.id}
+                            </td>
+                            <td class="text-start align-middle">
+                                ${item.fb_link}
+                            </td>
+                            <td class="text-start align-middle">
+                                ${item.created_at}
+                            </td>
+                            <td class="align-middle text-center pe-1">
+                                <a href="${item.fb_link}" class="btn-facebook" target="_blank"
+                                    class="text-secondary font-weight-bold text-xs">
+                                    <i class="fab fa-facebook"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                })
+                $('#tbody-posts').html(content)
+            }
+        }
+    })
+</script>
 {% endblock %}

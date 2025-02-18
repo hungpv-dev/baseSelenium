@@ -11,27 +11,7 @@ def home():
 
 @views.route('/posts')
 def list_posts():
-    list_posts = posts.get() 
-    unique_fb_links = set()
-    filtered_posts = []
-    duplicate_count = 0  
-    total_duplicates = 0 
-
-    for post in list_posts:
-        if post.get('fb_link') not in unique_fb_links:
-            unique_fb_links.add(post.get('fb_link'))
-            filtered_posts.append(post)
-        else:
-            duplicate_count += 1
-        total_duplicates += 1
-
-    return render_template(
-        "pages/posts.html",
-        list_posts=filtered_posts, 
-        unique_count=len(filtered_posts),
-        duplicate_count=duplicate_count, 
-        total_duplicates=total_duplicates 
-    )
+    return render_template("pages/posts.html")
 
 
 @views.route('/accounts')
