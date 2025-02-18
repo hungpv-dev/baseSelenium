@@ -1,0 +1,135 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Pages{% endblock %}
+
+{% block content %}
+<style>
+    .btn-facebook:hover {
+        color: #4267B2;
+    }
+
+    .btn-config {
+        opacity: 1;
+        padding: unset;
+        margin: unset;
+        padding: 5px 10px;
+        box-shadow: 0 0 7px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.2u);
+    }
+</style>
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header pb-0">
+                <h6>Authors table</h6>
+            </div>
+            <div class="card-body px-0 pt-0 pb-2">
+                <div class="table-responsive p-0">
+                    <table class="table align-items-center mb-0">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    #
+                                </th>
+                                <th
+                                    class="text-start text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    Tên tài khoản</th>
+                                <th
+                                    class="text-start text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    Trạng thái</th>
+                                <th
+                                    class="text-end text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    Thao tác</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for acc in list_accounts %}
+                            <tr class="text-xs">
+                                <td class="px-0 text-center align-middle">
+                                    {{ acc.id }}
+                                </td>
+                                <td class="px-0 text-start align-middle">
+                                    {{ acc.name }}
+                                </td>
+                                <td class="px-0 text-start align-middle">
+                                    {% if acc.status == 1 %}
+                                    <span class="badge badge-sm bg-gradient-success">Đang hoạt động</span>
+                                    {% else %}
+                                    <span class="badge badge-sm bg-gradient-danger">Không hoạt động</span>
+                                    {% endif %}
+                                </td>
+                                <td class="align-middle text-end ps-1">
+                                    <!-- Nếu đang chạy thì hiển thị nút "Tắt" -->
+                                    <button
+                                        data-start="{% if acc.is_browse_link_fb == 1 %}true{% else %}false{% endif %}"
+                                        class="btn btn-sm btn-config btn-actions {% if acc.is_browse_link_fb == 1 %}text-danger{% else %}text-info{% endif %}"
+                                        data-id="{{ acc.id }}">
+                                        <i
+                                            class="fas {% if acc.is_browse_link_fb == 1 %}fa-pause{% else %}fa-play{% endif %}"></i>
+                                    </button>
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    const handleBrowse = {
+        'start': function (id) {
+            let api = `/spy-browse/start/${id}`
+            return axios.post(api)
+        },
+        'stop': function (id) {
+            let api = `/spy-browse/stop/${id}`
+            return axios.post(api)
+        }
+    }
+
+    $(document).on('click', '.btn-actions', async function () {
+        let btn = this
+        let start = $(this).attr('data-start')
+        let accountId = $(this).attr('data-id')
+        let textBtn = ``
+        let classBtn = ``
+        $(this).removeClass('text-danger text-info')
+        // btnLoading(btn, true)
+        if (start == 'true') {
+            try {
+                // let res = await handleBrowse.start(accountId)
+                textBtn = `<i class='fas fa-stop'></i>`
+                $(this).attr('data-start', 'false')
+                classBtn = 'text-danger'
+            } catch (e) {
+                console.log(e);
+                classBtn = 'text-info'
+                textBtn = `<i class='fas fa-play'></i>`
+            }
+        } else {
+            try {
+                // let res = await handleBrowse.stop(accountId)
+                textBtn = `<i class='fas fa-play'></i>`
+                $(this).attr('data-start', 'true')
+                classBtn = 'text-info'
+            } catch (e) {
+                console.log(e)
+                classBtn = 'text-danger'
+                textBtn = `<i class='fas fa-stop'></i>`
+            }
+        }
+        $(this).html(textBtn)
+        $(this).addClass(classBtn)
+        // btnLoading(btn, false, textBtn)
+    })
+
+
+</script>
+{% endblock %}

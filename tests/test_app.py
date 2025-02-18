@@ -1,5 +1,5 @@
 import unittest
-from server.driver import app
+from server.spy_browse import app
 
 class TestApp(unittest.TestCase):
     def setUp(self):

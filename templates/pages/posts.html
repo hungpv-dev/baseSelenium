@@ -1,0 +1,67 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Pages{% endblock %}
+
+{% block content %}
+<style>
+    .btn-facebook:hover {
+        color: #4267B2;
+    }
+</style>
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header pb-0">
+                <h6>List of Posts</h6>
+            </div>
+            <div class="card-body px-0 pt-0 pb-2">
+                <div class="table-responsive p-0">
+                    <table class="table align-items-center mb-0">
+                        <thead>
+                            <tr>
+                                <th
+                                    class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    #
+                                </th>
+                                <th
+                                    class="text-start text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2 px-1">
+                                    Đường dẫn</th>
+                                <th
+                                    class="text-start text-start text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    Thời gian lấy</th>
+                                <th
+                                    class="text-center text-start text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 px-1">
+                                    Facebook</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for post in list_posts %}
+                            <tr class="text-xs">
+                                <td class="text-center align-middle">
+                                    {{ post.id }}
+                                </td>
+                                <td class="text-start align-middle">
+                                    {{ post.fb_link }}
+                                </td>
+                                <td class="text-start align-middle">
+                                    {{ post.created_at }}
+                                </td>
+                                <td class="align-middle text-center pe-1">
+                                    <a href="{{ post.fb_link }}" class="btn-facebook" target="_blank"
+                                        class="text-secondary font-weight-bold text-xs">
+                                        <i class="fab fa-facebook"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block script %}
+{% endblock %}

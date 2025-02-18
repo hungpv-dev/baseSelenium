@@ -29,4 +29,4 @@ def config(key = None, defaultValue = None):
     if key is None:
         return settings
     
-    return settings.get(key) or defaultValue
+    return settings.get(key) if key in settings else defaultValue
