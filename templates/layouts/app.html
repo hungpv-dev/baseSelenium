@@ -1,28 +1,107 @@
-<!-- src/templates/layout.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Desktop App{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Postman Clone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #34495e;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header select,
+        .header input,
+        .header button {
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .response {
+            flex: 1;
+            background: #ecf0f1;
+            padding: 20px;
+            margin-top: 10px;
+            overflow: auto;
+        }
+    </style>
 </head>
+
 <body>
-    <header>
-        <h1>My Desktop App</h1>
-        <nav>
-            <ul>
-                <li><a href="{{ url_for('views.home') }}">Home</a></li>
-                <li><a href="{{ url_for('views.page1') }}">Page 1</a></li>
-                <li><a href="{{ url_for('views.page2') }}">Page 2</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-    <footer>
-        <p>&copy; 202 My Desktop App</p>
-    </footer>
+    <div class="sidebar">
+        <h2>Requests</h2>
+        <ul>
+            <li>GET /users</li>
+            <li>POST /login</li>
+            <li>PUT /update</li>
+        </ul>
+    </div>
+    <div class="content">
+        <div class="header">
+            <select id="method">
+                <option>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+            </select>
+            <input type="text" id="url" placeholder="Nhập URL..." style="flex: 1;">
+            <button id="sendRequest" style="background: #1abc9c; color: white;">Gửi</button>
+        </div>
+        <div class="response">
+            <h3>Response</h3>
+            <pre id="responseText">Kết quả phản hồi sẽ hiển thị ở đây...</pre>
+        </div>
+    </div>
+    <script>
+        document.getElementById("sendRequest").addEventListener("click", function () {
+            const method = document.getElementById("method").value;
+            const url = document.getElementById("url").value;
+
+            if (!url) {
+                alert("Vui lòng nhập URL");
+                return;
+            }
+
+            fetch(url, { method: method })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("responseText").textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById("responseText").textContent = "Lỗi: " + error;
+                });
+        });
+    </script>
 </body>
+
 </html>

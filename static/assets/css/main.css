@@ -1,0 +1,224 @@
+/* Hiệu ứng xuất hiện cho dữ liệu của bảng */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tr-fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* require Data */
+.require::after {
+    content: " *";
+    color: red;
+}
+
+/* Ẩn item đã được chọn trong menu tab */
+.form-menu .nav-item .custom.active {
+    display: none;
+}
+
+/* css cho thanh cuộn nổi của bảng dữ liệu */
+.scrollbar-x {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    height: 10px;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    visibility: hidden;
+    user-select: none;
+}
+
+.scrollbar-x.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.scrollbar-x-thumb {
+    position: absolute;
+    left: 0;
+    height: 100%;
+    background: rgba(var(--phoenix-quaternary-bg-rgb), 0.8);
+    border-radius: 4px;
+    user-select: none;
+}
+
+@keyframes openForm {
+    from {
+        transform: scale(0);
+    }
+
+    to {
+        transform: scale(1);
+    }
+}
+
+.form-open {
+    animation: openForm 0.2s;
+}
+
+.thongke {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-gap: 20px;
+}
+
+.thongke > div {
+    display: flex;
+    border-radius: 5px;
+    background-color: var(--phoenix-navbar-top-bg-color);
+    box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.2);
+}
+
+.thongke > div > .icon {
+    padding: 10px;
+    color: white;
+}
+
+.thongke > div > .body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.thongke > div > .icon > .icon-border {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: green;
+    border-radius: 5px;
+    width: 40px;
+    height: 40px;
+    color: white;
+    font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+    .thongke {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 568px) {
+    .thongke {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+.fa-icon-wait {
+    opacity: 1 !important;
+}
+
+.typeTotalStatus {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.tr-bold {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 768px) {
+    .table-config,
+    .table-config thead,
+    .table-config tbody,
+    .table-config th,
+    .table-config td,
+    .table-config tr:not(.none-set) {
+        display: block;
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .table-config thead {
+        display: none;
+    }
+
+    .table-config tr:not(.none-set) {
+        margin-bottom: 2rem;
+    }
+    .td-loading{
+        justify-content: center !important;
+    }
+
+    .table-config td {
+        display: flex;
+        justify-content: space-between;
+        padding-left: 0;
+        text-align: left;
+        position: relative;
+        align-items: center;
+        white-space: normal;
+    }
+    
+    .table-config td > div {
+        text-align: end;
+    }
+
+    .table-config tr:not(.none-set) td:not(.td-loading)::before { /* Exclude td-loading */
+        content: attr(data-label);
+        font-weight: bold;
+        flex: 1;
+        text-align: left;
+        margin-right: 1rem;
+    }
+
+    .table-config td:last-child {
+        text-align: right;
+    }
+    .table-config td > span {
+        display: inherit;
+    }
+
+    .table-config .loading-data > td {
+        display: block;
+    }
+}
+
+/* Container màn hình loading */
+.loading-screen {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.wave {
+position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        rgba(230, 245, 255, 0.2) 0%,
+        rgba(204, 229, 255, 0.3) 50%,
+        rgba(230, 245, 255, 0) 100%
+    );
+    animation: wave-animation 1s linear infinite;
+}
+
+@keyframes wave-animation {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
