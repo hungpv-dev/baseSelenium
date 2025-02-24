@@ -1,45 +1,25 @@
-class Post:
-    def __init__(self, connection):
-        self.connection = connection
+from sql.config import Model
 
-    def get(self):
-        cursor = self.connection.cursor(dictionary=True)
-        query = "SELECT * FROM posts ORDER BY created_at DESC"
-        cursor.execute(query)
-        accounts = cursor.fetchall()
-        return accounts
+class Post(Model):
+
+    def __init__(self):
+        super().__init__()
+        self.table = 'posts'
+    
+    def get_all(self ,params = None):
+        return self.get(self.table,params=params)
 
     def create(self, data):
-        cursor = self.connection.cursor(dictionary=True)
-        query = """
-        INSERT INTO posts (account_id, fb_link, fb_id, created_at, updated_at) 
-        VALUES (%s, %s, %s, NOW(), NOW())
-        """
-        cursor.execute(query, data)
-        self.connection.commit()
-        print("Account created successfully")
-
-
-    def find(self, id):
-        cursor = self.connection.cursor(dictionary=True)
-        query = "SELECT * FROM accounts WHERE id = %s"
-        cursor.execute(query, (id,))
-        account = cursor.fetchone()
-        return account
-
+        return self.post(self.table, data=data)
+    
     def update(self, id, data):
-        cursor = self.connection.cursor()
-        set_clause = ", ".join([f"{key} = %s" for key in data.keys()])
-        values = list(data.values())
-        values.append(id)
-        query = f"UPDATE accounts SET {set_clause} WHERE id = %s"
-        cursor.execute(query, values)
-        self.connection.commit()
-        print("Account updated successfully")
+        return self.put(f"{self.table}/{id}", data=data)
+    
+    def show(self, id):
+        return self.get(f"{self.table}/{id}")
+    
+    def get_operasystem(self):
+        return self.get(f"operating-systems")
 
-    def delete(self, username):
-        cursor = self.connection.cursor()
-        query = "DELETE FROM accounts WHERE username = %s"
-        cursor.execute(query, (username,))
-        self.connection.commit()
-        print("Account deleted successfully")
+    def destroy(self, id):
+        return self.delete(f"{self.table}/{id}")

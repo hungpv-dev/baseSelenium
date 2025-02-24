@@ -1,12 +1,6 @@
-from helpers.base import config
 from .chrome import create_chrome
 from selenium.webdriver.common.action_chains import ActionChains
 import json
-
-managers = {
-    'chrome': create_chrome,
-}
-
 
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
@@ -14,9 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 class Driver:
-    def __init__(self, proxy=None):
-        browser = config('browser','chrome')
-        self.driver = managers.get(browser)(proxy=proxy) 
+    def __init__(self, profile=None, undetected = True):
+        self.driver = create_chrome(profile=profile,undetected=undetected)
         self.type_find_element = {
             'xpath': By.XPATH,
             'id': By.ID,
@@ -34,6 +27,17 @@ class Driver:
         self.driver.get(url)
         if e_wait > 0:
             sleep(e_wait)
+
+    def closeModal(self, index, last = False, type = '//*[@aria-label="Close"]'):
+        try:
+            modals = self.find_all(type)
+            if len(modals) > index:
+                if last:
+                    modals[-1].click()
+                else:
+                    modals[index].click()
+        except Exception as e:
+            print(f'Lỗi click modal: {index} - {e}')
 
     def setCookies(self, cookies):
         if not cookies:
@@ -81,10 +85,20 @@ class Driver:
         return results
 
     def clickText(self, text, wait=0):
-        xpath = f"//*[contains(text(), '{text}')]"
-        ele = self.find(xpath,wait=wait)
-        if ele is not None:
-            ele.click()
+        try:
+            xpath = f"//*[contains(text(), '{text}')]"
+            ele = self.find(xpath,wait=wait)
+            if ele is not None:
+                ele.click()
+        except Exception as e:
+            print(f'Không click đc element: {e}')
+
+    def clickOk(self):
+        try:
+            ok_button = self.find('//*[@aria-label="OK"]')
+            ok_button.click()
+        except Exception as e:
+            pass
 
     def new_tab(self, domain:str = None):
         original_window = self.driver.current_window_handle

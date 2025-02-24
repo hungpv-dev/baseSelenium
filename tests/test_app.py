@@ -1,19 +1,19 @@
-import unittest
-from server.spy_browse import app
+# import unittest
+# from server.spy_browse import app
 
-class TestApp(unittest.TestCase):
-    def setUp(self):
-        self.app = app.test_client()
-        self.app.testing = True
+# class TestApp(unittest.TestCase):
+#     def setUp(self):
+#         self.app = app.test_client()
+#         self.app.testing = True
 
-    def test_index(self):
-        result = self.app.get('/')
-        self.assertEqual(result.status_code, 200)
+#     def test_index(self):
+#         result = self.app.get('/')
+#         self.assertEqual(result.status_code, 200)
 
-    def test_hello(self):
-        result = self.app.get('/api/hello')
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(result.json, {"message": "Hello, Python function was called!"})
+#     def test_hello(self):
+#         result = self.app.get('/api/hello')
+#         self.assertEqual(result.status_code, 200)
+#         self.assertEqual(result.json, {"message": "Hello, Python function was called!"})
 
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

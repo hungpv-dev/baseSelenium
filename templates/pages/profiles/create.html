@@ -1,0 +1,648 @@
+{% extends "layouts/app.html" %}
+{% block title %}Create Profile{% endblock %}
+{% block style %}
+<style>
+    .word-wrap {
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .helpCircle {
+        width: 13px;
+        cursor: pointer;
+    }
+
+    .helpCircle:hover {
+        color: red;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-content" id="app">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Create Profile</h4>
+
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Forms</a></li>
+                            <li class="breadcrumb-item active">Create Profile</li>
+                        </ol>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row project-wrapper">
+            <div class="col-xl-8">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#individuallyCreate" role="tab"
+                                    aria-selected="false">
+                                    Individually Create
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#batchCreate" role="tab"
+                                    aria-selected="false">
+                                    Batch Create
+                                </a>
+                            </li>
+                        </ul>
+                        <!-- Tab panes -->
+                        <div class="tab-content text-muted">
+                            <div class="tab-pane active" id="individuallyCreate" role="tabpanel">
+                                <form @submit.prevent="individuallySubmit"
+                                    class="accordion nesting-accordion custom-accordionwithicon accordion-border-box">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="individually-title-basic">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#individually-basic" aria-expanded="true"
+                                                aria-controls="individually-basic">
+                                                Basic
+                                            </button>
+                                        </h2>
+                                        <div id="individually-basic" class="accordion-collapse collapse show"
+                                            aria-labelledby="individually-title-basic">
+                                            <div class="accordion-body">
+                                                <div>
+                                                    <div class="live-preview">
+                                                        <div class="row gy-4">
+                                                            <div class="col-xxl-6 col-md-6">
+                                                                <div>
+                                                                    <label class="form-label">Profile Name</label>
+                                                                    <input type="text"
+                                                                        placeholder="Please enter your profile name"
+                                                                        v-model="create.name" class="form-control">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-xxl-6 col-md-6">
+                                                                <div>
+                                                                    <label class="form-label">User Dir</label>
+                                                                    <input type="name" disabled
+                                                                        v-model="create.user_dir" class="form-control">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6 col-md-6">
+                                                                <div>
+                                                                    <label class="form-label">Profile Group</label>
+                                                                    <select class="form-control"
+                                                                        v-model="create.group_id" id="choiceGroup">
+                                                                        <option value="" selected>Ungrouped
+                                                                        </option>
+                                                                        <option v-for="group in groups" :key="group.id"
+                                                                            :value="group.id">{{ group.name }}</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6 col-md-6">
+                                                                <div>
+                                                                    <label class="form-label">Browser</label>
+                                                                    <select class="form-control"
+                                                                        v-model="create.browser" id="choiceBrowser">
+                                                                        <option value="Chrome Browser" selected>Chrome
+                                                                            Browser</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-xxl-11 col-md-11">
+                                                                <div>
+                                                                    <label class="form-label">User Agent</label>
+                                                                    <input type="text" v-model="create.user_agent"
+                                                                        class="form-control">
+                                                                </div>
+                                                            </div>
+                                                            <div
+                                                                class="col-xxl-1 col-md-1 d-flex justify-content-end align-items-end">
+                                                                <button class="btn btn-info text-center w-100"
+                                                                    @click="fakeAgent"
+                                                                    :disabled="isLoading.reloadFakeAgent" type="button">
+                                                                    <span v-if="isLoading.reloadFakeAgent"
+                                                                        class="spinner-border"
+                                                                        style="width: 10px; height: 10px;"></span>
+                                                                    <i v-else class="ri-arrow-go-forward-fill"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="individually-title-proxy">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#individually-proxy" aria-expanded="true"
+                                                aria-controls="individually-proxy">
+                                                Proxy
+                                            </button>
+                                        </h2>
+                                        <div id="individually-proxy" class="accordion-collapse collapse show"
+                                            aria-labelledby="individually-title-proxy">
+                                            <div class="accordion-body">
+                                                <ul class="nav nav-pills nav-success mb-3" role="tablist">
+                                                    <li class="nav-item waves-effect waves-light">
+                                                        <a class="nav-link active" data-bs-toggle="tab"
+                                                            href="#proxy-custom" role="tab">Custom</a>
+                                                    </li>
+                                                    <li class="nav-item waves-effect waves-light">
+                                                        <a class="nav-link" data-bs-toggle="tab" href="#proxy-saved"
+                                                            role="tab">Saved Proxies</a>
+                                                    </li>
+                                                </ul>
+                                                <!-- Tab panes -->
+                                                <div class="tab-content text-muted">
+                                                    <div class="tab-pane active" id="proxy-custom" role="tabpanel">
+                                                        <div class="live-preview">
+                                                            <div class="row gy-4">
+                                                                <div class="col-xxl-10 col-md-10">
+                                                                    <div>
+                                                                        <label class="form-label">Quick input
+                                                                            <i data-feather="help-circle"
+                                                                                class="helpCircle"
+                                                                                data-bs-toggle="tooltip"
+                                                                                data-bs-placement="top"
+                                                                                title="Xin chào"></i>
+                                                                        </label>
+                                                                        <input type="text" placeholder="Optional"
+                                                                            class="form-control">
+                                                                    </div>
+                                                                </div>
+                                                                <div
+                                                                    class="col-xxl-2 col-md-2 d-flex align-items-end justify-content-end">
+                                                                    <button @click="submitAnalyzyProxy" type="button"
+                                                                        :disabled="isLoading.azalyzyProxy"
+                                                                        placeholder="Optional"
+                                                                        class="btn btn-primary w-100">
+                                                                        <span v-if="isLoading.azalyzyProxy"
+                                                                            class="spinner-border me-2"
+                                                                            style="width: 10px; height: 10px;"></span>
+                                                                        <span>Analyze</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="col-xxl-8 col-md-8">
+                                                                    <div>
+                                                                        <label class="form-label">Proxy host</label>
+                                                                        <input type="text" v-model="create.proxy.host"
+                                                                            :class="{ 'border-danger': errors.check_proxy }"
+                                                                            class="form-control"
+                                                                            placeholder="Please enter the proxy host">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-lg-4 col-md-4">
+                                                                    <div>
+                                                                        <label class="form-label">Proxy port</label>
+                                                                        <input type="text" v-model="create.proxy.port"
+                                                                            :class="{ 'border-danger': errors.check_proxy }"
+                                                                            class="form-control"
+                                                                            placeholder="Please enter the proxy port">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xxl-5 col-md-5">
+                                                                    <div>
+                                                                        <label class="form-label">Proxy user</label>
+                                                                        <input type="text" v-model="create.proxy.user"
+                                                                            class="form-control"
+                                                                            :class="{ 'border-danger': errors.check_proxy }"
+                                                                            placeholder="Please enter the proxy user">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-xxl-5 col-md-5">
+                                                                    <div>
+                                                                        <label class="form-label">Proxy pass</label>
+                                                                        <input type="text" v-model="create.proxy.pass"
+                                                                            :class="{ 'border-danger': errors.check_proxy }"
+                                                                            class="form-control"
+                                                                            placeholder="Please enter the proxy pass">
+                                                                    </div>
+                                                                </div>
+                                                                <div
+                                                                    class="col-xxl-2 col-md-2 d-flex align-items-end justify-content-end">
+                                                                    <button @click="submitCheckingProxy" type="button"
+                                                                        :disabled="isLoading.checkingProxy"
+                                                                        placeholder="Optional"
+                                                                        class="btn btn-info w-100">
+                                                                        <span v-if="isLoading.checkingProxy"
+                                                                            class="spinner-border me-2"
+                                                                            style="width: 10px; height: 10px;"></span>
+                                                                        <span>Checking</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane" id="proxy-saved" role="tabpanel">
+                                                        <div class="col-lg-12 col-md-12">
+                                                            <div>
+                                                                <label class="form-label">Proxies</label>
+                                                                <select class="form-control" v-model="create.proxy_id"
+                                                                    id="choiceProxy">
+                                                                    <option value="">No Proxy</option>
+                                                                    <option v-for="(item, key) in proxies"
+                                                                        :value="item.id">{{item.ip}}:{{item.port}}
+                                                                    </option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="individually-title-flatfrome">
+                                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                                data-bs-target="#individually-flatfrome" aria-expanded="true"
+                                                aria-controls="individually-flatfrome">
+                                                Account
+                                            </button>
+                                        </h2>
+                                        <div id="individually-flatfrome" class="accordion-collapse collapse show"
+                                            aria-labelledby="individually-title-flatfrome">
+                                            <div class="accordion-body">
+                                                <!-- Tab panes -->
+                                                <div class="live-preview">
+                                                    <ul class="nav nav-pills nav-success mb-3" role="tablist">
+                                                        <li class="nav-item waves-effect waves-light">
+                                                            <a class="nav-link active" data-bs-toggle="tab"
+                                                                href="#account-custom" role="tab">Account Custom</a>
+                                                        </li>
+                                                        <li class="nav-item waves-effect waves-light">
+                                                            <a class="nav-link" data-bs-toggle="tab" href="#account-saved"
+                                                                role="tab">Saved Accounts</a>
+                                                        </li>
+                                                    </ul>
+                                                    <!-- Tab panes -->
+                                                    <div class="tab-content text-muted">
+                                                        <div class="tab-pane active" id="account-custom" role="tabpanel">
+                                                            <div class="live-preview">
+                                                                <div class="row gy-4">
+                                                                    <div class="col-lg-12 col-md-12">
+                                                                        <div>
+                                                                            <label class="form-label">Flatform account</label>
+                                                                            <select class="form-control" v-model="create.account.type" id="choiceFlatform">
+                                                                                <option value="1" selected>Facebook</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-xxl-6 col-md-6">
+                                                                        <div>
+                                                                            <label class="form-label">Account Name</label>
+                                                                            <input type="text" v-model="create.account.name"
+                                                                                class="form-control"
+                                                                                placeholder="Please enter the proxy host">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-xxl-6 col-md-6">
+                                                                        <div>
+                                                                            <label class="form-label">Username</label>
+                                                                            <input type="text" v-model="create.account.user"
+                                                                                class="form-control"
+                                                                                placeholder="Please enter the proxy host">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-lg-6 col-md-6">
+                                                                        <div>
+                                                                            <label class="form-label">Password</label>
+                                                                            <input type="text" v-model="create.account.pwd"
+                                                                                class="form-control"
+                                                                                placeholder="Please enter the proxy port">
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-xxl-6 col-md-6">
+                                                                        <div>
+                                                                            <label class="form-label">2FA Key</label>
+                                                                            <input type="text" v-model="create.account.two_fa"
+                                                                                class="form-control"
+                                                                                placeholder="Please enter the proxy user">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="tab-pane" id="account-saved" role="tabpanel">
+                                                            <div class="row gy-4">
+                                                            <div class="col-xxl-12 col-md-12">
+                                                                <div>
+                                                                    <label class="form-label">Accounts</label>
+                                                                    <select class="form-control" v-model="create.account_id"
+                                                                        id="choiceAccounts">
+                                                                        <option value="">No Account</option>
+                                                                        <option v-for="(item, key) in accounts"
+                                                                            :value="item.id">{{item.name}}
+                                                                        </option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div
+                                            class="col-xxl-2 col-md-2 d-flex align-items-end w-100 justify-content-end">
+                                            <button type="submit" :disabled="isLoading.individuallySubmit"
+                                                class="btn btn-success w-25">
+                                                <span v-if="isLoading.individuallySubmit" class="spinner-border me-2"
+                                                    style="width: 10px; height: 10px;"></span>
+                                                <span>Submit</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-pane" id="batchCreate" role="tabpanel">
+                                <h6>Product</h6>
+                                <p class="mb-0">
+                                    You've probably heard that opposites attract. The same is true for fonts. Don't be
+                                    afraid to combine font styles that are different but complementary, like sans serif
+                                    with serif, short with tall, or decorative with simple. Qui photo booth letterpress,
+                                    commodo enim craft beer mlkshk aliquip jean shorts ullamco ad vinyl cillum PBR.
+                                </p>
+                            </div>
+                        </div>
+                    </div><!-- end card-body -->
+                </div><!-- end card -->
+            </div>
+
+            <div class="col-xl-4">
+                <div class="card">
+                    <div class="card-header border-0">
+                        <h4 class="card-title mb-0">Detail</h4>
+                    </div><!-- end cardheader -->
+                    <div class="card-body pt-0">
+                        <div v-for="(item, key) in views" class="mini-stats-wid d-flex align-items-center mt-3">
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ key }}</h6>
+                            </div>
+                            <div class="text-end">
+                                <p class="text-muted mb-0">{{ item }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--end row-->
+
+    </div> <!-- container-fluid -->
+</div><!-- End Page-content -->
+{% endblock %}
+{% block script %}
+<script>
+    const app = Vue.createApp({
+        setup() {
+            const groups = Vue.ref([]);
+            const accounts = Vue.ref([]);
+            const proxies = Vue.ref([]);
+            const choicePages = Vue.ref(null);
+            const pages = Vue.ref([]);
+            const errors = Vue.ref({
+                check_proxy: false,
+            });
+            const temps = Vue.ref({
+                base_dir: '',
+                folder: '-',
+                group: '-',
+            });
+
+            const create = Vue.reactive({
+                name: '',
+                user_dir: '-',
+                group_id: '',
+                user_agent: '',
+                start_url: 'https://whatismyipaddress.com',
+                browser: 'Chrome Browser',
+                proxy_id: '',
+                proxy: {
+                    'host': '',
+                    'port': '',
+                    'user': '',
+                    'pass': '',
+                },
+                account: {
+                    type: 1,
+                    name: '',
+                    user: '',
+                    pwd: '',
+                    two_fa: '',
+                },
+                account_id: '',
+            });
+
+            const views = Vue.computed(() => ({
+                'Profile Name': create.name,
+                'Profile Group': temps.value.group,
+                'User Dir': create.user_dir,
+                'Start Url': create.start_url,
+                'User Agent': create.user_agent,
+                'Browser': create.browser,
+                'Proxy': `${create.proxy.user}:${create.proxy.pass}@${create.proxy.host}:${create.proxy.port}`
+            }));
+
+            const isLoading = Vue.reactive({
+                azalyzyProxy: false,
+                individuallySubmit: false,
+                reloadFakeAgent: false,
+                checkingProxy: false,
+            })
+
+            async function fakeAgent(params = {}) {
+                isLoading.reloadFakeAgent = true;
+                let res = await axios.get('/api/useragent/fake')
+                if (res.status == 200) {
+                    create.user_agent = res.data?.user_agent;
+                }
+                isLoading.reloadFakeAgent = false;
+            }
+
+            async function submitCheckingProxy() {
+                isLoading.checkingProxy = true;
+                let { host, port, user, pass } = create.proxy
+                errors.value.check_proxy = false
+                try {
+                    let res = await axios.get("https://api.ipify.org/?format=json", {
+                        proxy: {
+                            protocol: 'http',
+                            host: host,
+                            port: port,
+                            auth: {
+                                username: user,
+                                password: pass
+                            }
+                        }
+                    });
+                    if (res.status === 200) {
+                        console.log(res.data);
+                        if(res.data?.ip == create.proxy.host){
+                            console.log("Proxy hoạt động!", res.data);
+                        }else{
+                            errors.value.check_proxy = true
+                        }
+                    } else {
+                        errors.value.check_proxy = true
+                    }
+                } catch (e) {
+                    console.log(e)
+                } finally {
+                    isLoading.checkingProxy = false;
+                }
+
+            }
+
+            const fetchGroups = async () => {
+                try {
+                    let res = await axios.get('/api/groups/');
+                    groups.value = res.data;
+                    Vue.nextTick(() => {
+                        new Choices(document.getElementById('choiceGroup'));
+                        new Choices(document.getElementById('choiceBrowser'));
+                    });
+                } catch (e) {
+                    console.error('Error fetching groups:', e);
+                }
+            };
+            const fetchAccounts = async () => {
+                try {
+                    let res = await axios.get('/api/accounts/');
+                    accounts.value = res.data.data;
+                    Vue.nextTick(() => {
+                        new Choices(document.getElementById('choiceAccounts'));
+                    });
+                } catch (e) {
+                    console.error('Error fetching groups:', e);
+                }
+            };
+
+            const fetchProxies = async () => {
+                try {
+                    let res = await axios.get('/api/proxies/');
+                    proxies.value = res.data;
+                    Vue.nextTick(() => {
+                        new Choices(document.getElementById('choiceProxy'));
+                    });
+                } catch (e) {
+                    console.error('Error fetching proxies:', e);
+                }
+            };
+
+            Vue.watch(() => create.group_id, (newValue) => {
+                let check = true;
+                groups.value.forEach(item => {
+                    if (item.id == newValue) {
+                        create.group_id = item.id;
+                        create.user_dir = `${temps.value.base_dir}/${item.folder}/${temps.value.folder || '-'}`
+                        temps.value.group = item.name
+                        check = false;
+                    }
+                })
+                if (check) {
+                    temps.value.group = '-'
+                    create.user_dir = `${temps.value.base_dir}/${temps.value.folder || '-'}`
+                }
+            });
+
+            Vue.watch(() => create.name, (newValue) => {
+                temps.value.folder = newValue
+                    ? newValue
+                        .toLowerCase()
+                        .normalize("NFD") // Chuẩn hóa ký tự Unicode
+                        .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu tiếng Việt
+                        .replace(/[^a-z0-9\s-]/g, '') // Loại bỏ ký tự đặc biệt
+                        .replace(/\s+/g, '-') // Chuyển khoảng trắng thành dấu gạch ngang
+                    : '';
+
+                custom_dir = `${temps.value.base_dir}`
+                if (create?.group_id) {
+                    groups.value.forEach(item => {
+                        if (item.id == create?.group_id) {
+                            custom_dir += `/${item.folder}`
+                        }
+                    })
+                }
+                custom_dir += `/${temps.value.folder || '-'}`
+                create.user_dir = custom_dir
+            });
+
+            Vue.onMounted(async () => {
+                fetchGroups();
+                fakeAgent();
+                fetchProxies();
+                fetchAccounts();
+                try {
+                    let res = await axios.get('/api/profiles/info');
+                    create.user_dir = res.data['user-dir']
+                    temps.value.base_dir = res.data['user-dir']
+                } catch (e) {
+                    console.log(e);
+                }
+            });
+
+            async function submitAnalyzyProxy() {
+                try {
+                    isLoading.azalyzyProxy = true;
+                    await new Promise((a, b) => setTimeout(a, 2000))
+                } catch (e) {
+                    console.log(e)
+                } finally {
+                    isLoading.azalyzyProxy = false;
+                    console.log(isLoading.azalyzyProxy)
+                }
+            }
+
+            async function individuallySubmit() {
+                try {
+                    isLoading.individuallySubmit = true;
+                    let res = await axios.post('/api/profiles/create', create)
+                    if (res.status == 200) {
+                        // create.value = {}
+                        Toastify({
+                            text: res?.data?.message || "Profile created successfully!",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#4caf50",
+                            close: true,
+                            stopOnFocus: true,
+                        }).showToast();
+                    }
+                } catch (e) {
+                    console.log(e)
+                    message = e?.message || 'An error occurred!';
+                    if (e?.response?.status == 400) {
+                        message = e.response.data?.message;
+                    }
+                    Toastify({
+                        text: message,
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f44336",
+                        close: true,
+                        stopOnFocus: true,
+                    }).showToast();
+                } finally {
+                    isLoading.individuallySubmit = false;
+                }
+            }
+            return { isLoading, create,accounts,pages, views, errors, groups, proxies, individuallySubmit, submitCheckingProxy, fakeAgent, submitAnalyzyProxy };
+        }
+    });
+
+    app.mount('#app');
+</script>
+{% endblock %}

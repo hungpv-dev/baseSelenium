@@ -1,0 +1,172 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Pages{% endblock %}
+
+{% block style %}
+<style>
+    .loading-spinner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+    }
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content" id="app">
+    <div class="container-fluid">
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Profiles</h4>
+
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Tables</a></li>
+                            <li class="breadcrumb-item active">Profiles</li>
+                        </ol>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">List of Profiles</h5>
+                    </div>
+                    <div class="card-body">
+                        <table id="example" class="table table-bordered dt-responsive nowrap table-striped align-middle"
+                            style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">STT</th>
+                                    <th>Name</th>
+                                    <th>Group</th>
+                                    <th>User Dir</th>
+                                    <th>Proxy</th>
+                                    <th>Start Url</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(profile, index) in profiles" :key="profile.id">
+                                    <td class="text-center">{{ ++index }}</td>
+                                    <td>{{ profile.name }}</td>
+                                    <td>{{ profile.group?.name || 'no' }}</td>
+                                    <td>{{ profile.user_dir }}</td>
+                                    <td>{{ profile.proxy ? `${profile.proxy.host}@${profile.proxy.port}` : 'no' }}</td>
+                                    <td>{{ profile.start_url || 'no'}}</td>
+                                    <td class="gridjs-td" v-html="profile.check == 2 
+                                        ? '<span class=\'badge badge-gradient-danger\'>Running</span>' 
+                                        : '<span class=\'badge badge-gradient-success\'>Ready</span>'">
+                                    </td>
+                                    <td v-if="profile.check == 2">
+                                        <button class="btn btn-outline-secondary btn-icon waves-effect waves-light" disabled>
+                                            <i class="ri-loader-4-line ri-spin" style="animation: spin 1s linear infinite;"></i>
+                                        </button>
+                                    </td>
+                                    <td v-else>
+                                        <button v-if="profile.status_process == 1" type="button" @click="stopBrowser(profile.id, $event)" class="btn btn-outline-danger btn-icon waves-effect waves-light">
+                                            <i class="ri-stop-fill"></i>
+                                        </button>
+                                        <button v-else type="button" @click="startBrowser(profile.id, $event)" class="btn btn-outline-info btn-icon waves-effect waves-light">
+                                            <i class="ri-play-fill"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!--end col-->
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+{% endblock %}
+{% block script %}
+<script>
+    const app = Vue.createApp({
+        setup() {
+            const profiles = Vue.ref([]);
+            let intervalId = null;
+
+            const fetchProfileDetails = async () => {
+                try {
+                    let res = await axios.get('/api/profiles/');
+                    profiles.value = res.data.data;
+                    const hasCheck2 = profiles.value.some(profile => profile.check == 2);
+                    if (hasCheck2 && !intervalId) {
+                        startPolling();
+                    } else if (!hasCheck2 && intervalId) {
+                        stopPolling();
+                    }
+                } catch (e) {
+                    console.log(e);
+                }
+            };
+
+            const startPolling = () => {
+                intervalId = setInterval(fetchProfileDetails, 1000);
+            };
+
+            const stopPolling = () => {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            };
+
+            const startBrowser = async (profileId, event) => {
+                const button = event.target;
+                button.disabled = true;
+                try {
+                    let res = await axios.post(`/api/profiles/start/${profileId}`);
+                    console.log(`Browser started for profile ${profileId}`);
+                } catch (e) {
+                    console.log(e);
+                } finally {
+                    button.disabled = false;
+                    fetchProfileDetails()
+                }
+            };
+
+            const stopBrowser = async (profileId, event) => {
+                const button = event.target;
+                button.disabled = true;
+                try {
+                    // new Promise((a, b) => setTimeout(a, 2000))
+                    let res = await axios.post(`/api/profiles/stop/${profileId}`);
+                    console.log(`Browser stopped for profile ${profileId}`);
+                } catch (e) {
+                    console.log(e);
+                } finally {
+                    button.disabled = false;
+                    fetchProfileDetails()
+                }
+            };
+
+            Vue.onMounted(() => {
+                fetchProfileDetails();
+            });
+
+            return { profiles, startBrowser, stopBrowser };
+        }
+    });
+
+    app.mount('#app');
+</script>
+{% endblock %}

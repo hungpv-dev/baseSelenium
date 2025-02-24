@@ -1,0 +1,313 @@
+{% extends "layouts/app.html" %}
+{% block title %}Manage Groups{% endblock %}
+{% block style %}
+<style>
+    .word-wrap {
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .loading-sm {
+        width: 13px;
+        height: 13px;
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-content" id="app">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Manage Groups</h4>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">Create
+                        Group</button>
+                </div>
+            </div>
+        </div>
+        <div class="row project-wrapper">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-header align-items-center d-flex">
+                        <h4 class="card-title mb-0 flex-grow-1">Group List</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Folder</th>
+                                    <th>Created Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="group in groups" :key="group.id">
+                                    <td>{{ group.id }}</td>
+                                    <td>{{ group.name }}</td>
+                                    <td>{{ group.folder || '-' }}</td>
+                                    <td>{{ formatDate(group.created_at) }}</td>
+                                    <td class="d-flex justify-content-start gap-2">
+                                        <button data-bs-toggle="modal" data-bs-target="#editGroupModal" class="btn btn-primary btn-sm wares-effect wares-light"
+                                            @click="showEditModal(group)">
+                                            <i class="fas fa-edit me-1"></i> Edit
+                                        </button>
+                                        <button class="btn btn-danger btn-sm wares-effect wares-light"
+                                            @click="deleteGroup(group.id)">
+                                            <i class="fas fa-edit me-1"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="createGroupModal" tabindex="-1" aria-labelledby="exampleModalgridLabel"
+        aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalgridLabel">Create Group</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="submitCreate()">
+                        <div class="row g-3">
+                            <div class="col-xxl-6">
+                                <div>
+                                    <label for="firstName" class="form-label">Name</label>
+                                    <input type="text" class="form-control" v-model="create.name"
+                                        placeholder="Enter Name">
+                                </div>
+                            </div><!--end col-->
+                            <div class="col-xxl-6">
+                                <div>
+                                    <label for="lastName" class="form-label">Folder</label>
+                                    <input type="text" class="form-control" v-model="create.folder" placeholder="-"
+                                        disabled>
+                                </div>
+                            </div><!--end col-->
+                            <div class="col-lg-12">
+                                <div class="hstack gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" :disabled="isLoading" class="btn btn-primary">
+                                        <span v-if="isLoading">
+                                            <span class="spinner-border spinner-border-sm loading-sm"></span>
+                                        </span>
+                                        Create
+                                    </button>
+                                </div>
+                            </div><!--end col-->
+                        </div><!--end row-->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editGroupModal" tabindex="-1" aria-labelledby="exampleModalgridLabel"
+        aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalgridLabel">Create Group</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="submitUpdate()">
+                        <div class="row g-3">
+                            <div class="col-xxl-6">
+                                <div>
+                                    <label for="firstName" class="form-label">Name</label>
+                                    <input type="text" class="form-control" v-model="edit.name"
+                                        placeholder="Enter Name">
+                                </div>
+                            </div><!--end col-->
+                            <div class="col-xxl-6">
+                                <div>
+                                    <label for="lastName" class="form-label">Folder</label>
+                                    <input type="text" class="form-control" v-model="edit.folder" placeholder="-"
+                                        disabled>
+                                </div>
+                            </div><!--end col-->
+                            <div class="col-lg-12">
+                                <div class="hstack gap-2 justify-content-end">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" :disabled="isLoading" class="btn btn-primary">
+                                        <span v-if="isLoading">
+                                            <span class="spinner-border spinner-border-sm loading-sm"></span>
+                                        </span>
+                                        Create
+                                    </button>
+                                </div>
+                            </div><!--end col-->
+                        </div><!--end row-->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    const app = Vue.createApp({
+        setup() {
+            const groups = Vue.ref([]);
+            const isLoading = Vue.ref(false);
+            const create = Vue.ref({ name: '', folder: '' });
+            const edit = Vue.ref({ id: null, name: '', folder: '' });
+
+            Vue.onMounted(() => {
+                fetchGroups();
+            });
+
+            Vue.watch(() => create.value.name, (newName) => {
+                create.value.folder = newName
+                    ? newName
+                        .toLowerCase()
+                        .normalize("NFD") // Chuẩn hóa ký tự Unicode
+                        .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu tiếng Việt
+                        .replace(/[^a-z0-9\s-]/g, '') // Loại bỏ ký tự đặc biệt
+                        .replace(/\s+/g, '-') // Chuyển khoảng trắng thành dấu gạch ngang
+                    : '';
+            });
+
+            Vue.watch(() => edit.value.name, (newName) => {
+                edit.value.folder = newName
+                    ? newName
+                        .toLowerCase()
+                        .normalize("NFD") // Chuẩn hóa ký tự Unicode
+                        .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu tiếng Việt
+                        .replace(/[^a-z0-9\s-]/g, '') // Loại bỏ ký tự đặc biệt
+                        .replace(/\s+/g, '-') // Chuyển khoảng trắng thành dấu gạch ngang
+                    : '';
+            })
+
+            function showToast(message, type = "success") {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    close: true,
+                    gravity: "top", // Vị trí hiển thị
+                    position: "right",
+                    backgroundColor: type === "success" ? "green" : "red",
+                }).showToast();
+            }
+
+            async function submitCreate() {
+                if (!create.value.name.trim()) {
+                    showToast("Vui lòng nhập tên nhóm!", "error");
+                    return;
+                }
+
+                try {
+                    isLoading.value = true;
+                    await new Promise((a, b) => setTimeout(a, 3000))
+                    const response = await axios.post('/api/groups/', {
+                        name: create.value.name,
+                        folder: create.value.folder
+                    });
+
+                    if (response.status === 201) {
+                        showToast("Tạo nhóm thành công!");
+                        fetchGroups(); 
+                        create.value = { name: '', folder: '' }; 
+
+                        const modalElement = document.getElementById('createGroupModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        modalInstance.hide();
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi tạo nhóm:", error);
+                    showToast("Có lỗi xảy ra khi tạo nhóm!", "error");
+                } finally {
+                    isLoading.value = false;
+                }
+            }
+
+            async function submitUpdate() {
+                if (!edit.value.id || !edit.value.name.trim()) {
+                    showToast("Vui lòng chọn nhóm và nhập tên mới!", "error");
+                    return;
+                }
+
+                try {
+                    isLoading.value = true;
+                    const response = await axios.put(`/api/groups/${edit.value.id}`, {
+                        name: edit.value.name,
+                        folder: edit.value.folder
+                    });
+
+                    if (response.status === 200) {
+                        showToast("Cập nhật nhóm thành công!");
+                        fetchGroups(); // Cập nhật danh sách nhóm
+                        edit.value = { id: null, name: '', folder: '' }; // Reset form
+
+                        const modalElement = document.getElementById('editGroupModal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        modalInstance.hide();
+                    }
+                } catch (error) {
+                    console.error("Lỗi khi cập nhật nhóm:", error);
+                    showToast("Có lỗi xảy ra khi cập nhật nhóm!", "error");
+                } finally {
+                    isLoading.value = false;
+                }
+            }
+
+            function showEditModal(group){
+                edit.value = group
+            }
+
+            async function deleteGroup(id) {
+                try {
+                    const response = await axios.delete(`/api/groups/${id}`);
+                    if (response.status === 200) {
+                        showToast("Xoá nhóm thành công!");
+                        fetchGroups(); 
+                    }
+                } catch (error) {
+                    showToast("Có lỗi xảy ra khi xoá nhóm!", "error");
+                }
+            }
+
+
+            const fetchGroups = async () => {
+                try {
+                    const response = await axios.get('/api/groups/');
+                    groups.value = response.data;
+                } catch (error) {
+                    console.error('Error fetching groups:', error);
+                }
+            };
+
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                return moment(dateString).fromNow();
+            };
+
+            return {
+                groups,
+                create,
+                edit,
+                fetchGroups,
+                isLoading,
+                formatDate,
+                showEditModal,
+                submitCreate,
+                submitUpdate,
+                deleteGroup
+            };
+        }
+    });
+    app.mount('#app');
+</script>
+{% endblock %}

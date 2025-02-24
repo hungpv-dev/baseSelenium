@@ -1,31 +1,18 @@
-from zipfile import ZipFile
 import os
 from helpers.base import config
 
-def create_extension_with_proxy(proxy):
-    proxy_host = proxy['ip']
+def create_extension_with_proxy(user_dir, proxy):
+    proxy_host = proxy['host']
     proxy_port = proxy['port']
     username = proxy['user']
     password = proxy['pass']
     
-    output_dir =  config('cache_path', './tmp/extensions/') 
-    os.makedirs(output_dir, exist_ok=True)
-    
-    output_file = f'{output_dir}/{proxy_host.replace(".", "_")}.zip'
-    
-    """
-    Tạo extension Chrome hỗ trợ proxy.
-    
-    Args:
-        proxy_host (str): Địa chỉ IP hoặc hostname của proxy.
-        proxy_port (int): Cổng của proxy.
-        username (str): Tên người dùng proxy.
-        password (str): Mật khẩu proxy.
-        output_file (str): Tên file zip chứa extension (mặc định là 'proxy_auth_plugin_v3.zip').
-    
-    Returns:
-        str: Đường dẫn tới file zip vừa tạo.
-    """
+    output_dir = os.path.join(user_dir, 'Extensions')
+
+    ext_dir = os.path.join(output_dir, proxy_host.replace(".", "_"))  # Thư mục chứa extension
+    os.makedirs(ext_dir, exist_ok=True)
+
+    # Nội dung manifest.json
     manifest_json = """
     {
         "version": "1.0.0",
@@ -44,6 +31,7 @@ def create_extension_with_proxy(proxy):
     }
     """
     
+    # Nội dung background.js
     background_js = f"""
     chrome.proxy.settings.set({{
         value: {{
@@ -76,9 +64,12 @@ def create_extension_with_proxy(proxy):
     );
     """
     
-    # Tạo file zip chứa extension
-    with ZipFile(output_file, 'w') as zp:
-        zp.writestr("manifest.json", manifest_json)
-        zp.writestr("background.js", background_js)
+    # Ghi file manifest.json
+    with open(os.path.join(ext_dir, "manifest.json"), "w") as f:
+        f.write(manifest_json)
     
-    return output_file
+    # Ghi file background.js
+    with open(os.path.join(ext_dir, "background.js"), "w") as f:
+        f.write(background_js)
+
+    return ext_dir 

@@ -1,0 +1,223 @@
+{% extends "layouts/app.html" %}
+
+{% block title %}Post{% endblock %}
+
+{% block style %}
+{% endblock %}
+
+{% block content %}
+<div class="page-content" id="app">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+                    <h4 class="mb-sm-0">Ads</h4>
+
+                    <div class="page-title-right">
+                        <ol class="breadcrumb m-0">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Tables</a></li>
+                            <li class="breadcrumb-item active">Ads</li>
+                        </ol>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <!-- end page title -->
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title mb-0 flex-grow-1">List of Ads</h4>
+                    </div>
+
+                    <div class="row p-3">
+                        <div class="col-lg-12">
+                            <form @submit.prevent="search()" class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Search name account</label>
+                                    <input type="text" class="form-control" v-model="name"
+                                        placeholder="Enter your account name">
+                                </div>
+                                <div class="col-2 d-flex align-items-end">
+                                    <div class="text-end">
+                                        <button type="submit" :disabled="isLoading"
+                                            class="btn btn-primary waves-effect">
+                                            <span v-if="isLoading" class="spinner-border"
+                                                style="width: 10px; height: 10px;"></span>
+                                            Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- end col -->
+                    </div>
+
+                    <div class="card-body">
+                        <div id="table-fanpage">
+                            <table class="gridjs-table">
+                                <thead class="gridjs-thead">
+                                    <tr class="gridjs-tr">
+                                        <th class="gridjs-th">#</th>
+                                        <th class="gridjs-th">Account</th>
+                                        <th class="gridjs-th">Profile</th>
+                                        <th class="gridjs-th">Process</th>
+                                        <th class="gridjs-th">Status</th>
+                                        <th class="gridjs-th">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="gridjs-tr" v-for="(item, index) in profiles" :key="item.id">
+                                        <td class="gridjs-td">{{ item.id }}</td>
+                                        <td class="gridjs-td">
+                                            <span>Name: <a class="fw-bold" :href="item.account?.link">{{ item.account?.name }}</a><br></span>
+                                            <span>Status: <span v-html="statusLogin(item.status_login)"></span></span>
+                                        </td>
+                                        <td class="gridjs-td">
+                                            <span>Profile Name: <span class="text-primary fw-bold">{{ item.name }}</span></span><br>
+                                            <span>Group: <span class="text-primary fw-bold">{{ item.group?.name || 'no' }}</span></span><br>
+                                            <span>User Dir: <span class="text-primary fw-bold">{{ item.user_dir }}</span></span><br>
+                                            <span>Proxy: <span class="text-success fw-bold">{{ item.proxy ? item.proxy.ip +'@'+item.proxy.port : 'Local IP' }}</span></span>
+                                        </td>
+                                        <td class="gridjs-td" v-html="item.running == 1 
+                                        ? '<span class=\'badge badge-gradient-danger\'>Running</span>' 
+                                        : '<span class=\'badge badge-gradient-success\'>Ready</span>'">
+                                        </td>
+                                        <td class="gridjs-td">{{ item.status_text }}</td>
+                                        <td class="gridjs-td" v-if="item?.check == 2">
+                                            <button class="btn btn-outline-secondary btn-icon waves-effect waves-light" disabled>
+                                                <i class="ri-loader-4-line ri-spin" style="animation: spin 1s linear infinite;"></i>
+                                            </button>
+                                        </td>
+                                        <td class="gridjs-td" v-else>
+                                            <button v-if="item.status_process == 1" type="button" @click="stopBrowser(item.id, $event)" class="btn btn-outline-danger btn-icon waves-effect waves-light">
+                                                <i class="ri-stop-fill"></i>
+                                            </button>
+                                            <button v-else type="button" @click="startBrowser(item.id, $event)" class="btn btn-outline-info btn-icon waves-effect waves-light">
+                                                <i class="ri-play-fill"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div><!-- end card -->
+            </div>
+            <!-- end col -->
+        </div>
+    </div>
+    <!-- container-fluid -->
+</div>
+{% endblock %}
+{% block script %}
+<script>
+    const app = Vue.createApp({
+        setup() {
+            const isLoading = Vue.ref(false)
+            const name = Vue.ref('')
+            let intervalId = null;
+            const profiles = Vue.ref([])
+            async function getStatus() {
+                try {
+                    let res = await axios.get('/tools/crawl-ads/')
+                    if (res.status = 200) {
+                        let data = res.data;
+                        let check = false
+                        profiles.value.forEach(item => {
+                            let status = data[item.id]
+                            if(status){
+                                check = true
+                                item.check = status.check
+                                item.status_process = status.status_process
+                                item.status_text = status.status
+                            }
+                        })
+                        if(check && !intervalId){
+                            startCallStatus()
+                        } else if(!check && intervalId){
+                            stopCallStatus()
+                        }
+                    }
+                } catch (e) {
+                    console.log(e)
+                }
+            }
+
+            async function getProfiles(name = '') {
+                try {
+                    isLoading.value = true
+                    let res = await axios.get('/api/profiles/', {
+                        params: {
+                            name,
+                        }
+                    })
+                    if (res.status = 200) {
+                        profiles.value = res.data?.data
+                    }
+                } catch (e) {
+                    console.log(e)
+                } finally {
+                    isLoading.value = false
+                }
+            }
+
+            const startCallStatus = ()  => {
+                intervalId = setInterval(getStatus, 1000)
+            }
+
+            const stopCallStatus = () => {
+                if(intervalId){
+                    clearInterval(intervalId)
+                    intervalId = null;
+                }
+            }
+
+            Vue.onMounted(async () => {
+                await getProfiles()
+                await getStatus();
+            })
+            async function search() {
+                await getProfiles(name.value)
+                await getStatus();
+            }
+
+            const startBrowser = async (profileId, event) => {
+                const button = event.target;
+                button.disabled = true;
+                try {
+                    let res = await axios.post(`/tools/crawl-ads/start/${profileId}`);
+                    console.log(`Browser started for profile ${profileId}`);
+                } catch (e) {
+                    console.log(e);
+                } finally {
+                    button.disabled = false;
+                    getStatus()
+                }
+            };
+
+            const stopBrowser = async (profileId, event) => {
+                const button = event.target;
+                button.disabled = true;
+                try {
+                    let res = await axios.post(`/tools/crawl-ads/stop/${profileId}`);
+                    console.log(`Browser stopped for profile ${profileId}`);
+                } catch (e) {
+                    console.log(e);
+                } finally {
+                    button.disabled = false;
+                    getStatus()
+                }
+            };
+
+            return { name, profiles, search,startBrowser, stopBrowser, isLoading, statusLogin };
+        }
+    });
+
+    app.mount('#app');
+</script>
+{% endblock %}

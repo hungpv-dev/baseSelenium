@@ -23,3 +23,25 @@ def list_account():
         else:
             acc['is_browse_link_fb'] = 2 
     return render_template("pages/accounts.html",list_accounts=list_accounts)
+
+@views.route('/settings')
+def settings():
+    return render_template("pages/settings.html")
+
+
+@views.route('/profiles')
+def profiles():
+    return render_template("pages/profiles/list.html")
+
+
+@views.route('/profiles/create')
+def profile_create():
+    return render_template("pages/profiles/create.html")
+
+@views.route('/groups')
+def groups():
+    return render_template("pages/profiles/groups.html")
+
+@views.route('/crawl-ads')
+def crawlAds():
+    return render_template("pages/automations/crawl-ads.html")

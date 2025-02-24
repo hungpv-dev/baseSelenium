@@ -1,5 +1,42 @@
 from helpers.omo_captcha import get_code_from_img
 from time import sleep
+from sql import accounts
+
+def login(tab, driver, account):
+    tab['status'] = 'Kiểm tra đăng nhập!'
+    check = False
+    status_login = check_login(driver)
+    check = status_login
+    if status_login == False:
+        tab['status'] = 'Đang thử login với cookies...'
+        driver.setCookies(account.get('cookies'))
+        driver.get('https://facebook.com', e_wait=3)
+        accept_all_cookies = driver.find_all('//*[@aria-label="Allow all cookies"]', last=True)
+        if accept_all_cookies:
+            accept_all_cookies.click()
+        print('Kiểm tra trạng thái login')
+        tab['status'] = 'Đang kiểm tra login...'
+        status_login = check_login(driver)
+        check = status_login
+        if status_login == False:
+            tab['status'] = 'Đăng nhập thất bại'
+            print('Login không thành công, bắt đầu login...')
+            login_with_user_pass(driver, account)
+            status_login = check_login(driver)
+            print(f'Login: {status_login}')
+            dataUpdate = {}
+            if status_login:
+                cookies = driver.get_cookies()
+                dataUpdate['cookie'] = cookies
+                dataUpdate['status_login'] = 2
+                dataUpdate['type_edit'] = 2
+                check = True
+            else:
+                dataUpdate['status_login'] = 1
+                check = False
+            accounts.update(account.get('id'), dataUpdate)
+    return check
+
 def check_login(driver):
     profile = driver.find('//*[@aria-label="Your profile"]')
     if profile is None:
@@ -7,7 +44,7 @@ def check_login(driver):
     return True
     
 def login_with_user_pass(driver, account):
-    driver.find('email', 'id', account.get('fb_id'))
+    driver.find('email', 'id', account.get('user'))
     driver.find('pass', 'id', account.get('pwd'))
     btnSubmit = driver.find('loginbutton', 'id') or driver.find('login', 'name')
     btnSubmit.click()

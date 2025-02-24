@@ -6,9 +6,10 @@ app = create_app()
 
 
 if __name__ == '__main__':
-    server_thread = Thread(target=start_app,args=(app,))
-    server_thread.daemon = True
-    server_thread.start()
+    start_app(app)
+    # server_thread = Thread(target=start_app,args=(app,False))
+    # server_thread.daemon = True
+    # server_thread.start()
 
-    webview.create_window('Asfy Tech', 'http://127.0.0.1:5000', maximized=True)
-    webview.start()
+    # webview.create_window('Asfy Tech', 'http://127.0.0.1:5000', maximized=True)
+    # webview.start()
