@@ -48,6 +48,7 @@ def start_crawl_up(id):
             # Lấy danh sách bài viết
             try:
                 driver.get('https://facebook.com', e_wait=2)
+                print('Chuyển hướng facebook')
                 driver.clickOk()
 
                 post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)
@@ -116,7 +117,7 @@ def create_browser_link_spy_fb(driver, account, stop_event, tab):
                                     share = p.find_element(By.XPATH, './/*[@aria-label="Send this to friends or post it on your profile."]')
                                     actions.move_to_element(share).perform()
                                     share.click()
-                                    sleep(3)
+                                    sleep(5)
                                     parent_element = driver.find_element(By.XPATH, ".//*[@aria-label='List of available \"share to\" options in the unified share sheet.']")
                                     list = parent_element.find_elements(By.XPATH, "./div/div/div")
                                     for item in list:
@@ -133,14 +134,15 @@ def create_browser_link_spy_fb(driver, account, stop_event, tab):
                                         'fb_link': fb_link,
                                         'fb_id': fb_id,
                                     })
-                                    if len(list_posts) >= 5:
-                                        print('Đã thu thập đủ 5 bài viết, trả về danh sách.')
-                                        return list_posts
                                 except Exception as e:
                                     print(f'Lỗi click share {stt}: {e}')
+                                    return list_posts
                                 break
             except Exception as e:
                 print(e)
+        if len(list_posts) >= 5:
+            print('Đã thu thập đủ 5 bài viết, trả về danh sách.')
+            return list_posts
         driver.randomSleep()
         tab['status'] = 'Cuộn chuột xuống!'
         driver.execute_script("window.scrollBy(0, 200);")

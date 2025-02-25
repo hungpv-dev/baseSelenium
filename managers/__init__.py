@@ -40,8 +40,9 @@ class Driver:
             print(f'Lỗi click modal: {index} - {e}')
 
     def randomSleep(self, min_time: int = 5, max_time: int = 10):
-        sleep_time = random.uniform(min_time, max_time)
-        sleep(sleep_time)
+        pass
+        # sleep_time = random.uniform(min_time, max_time)
+        # sleep(sleep_time)
 
 
     def setCookies(self, cookies):
