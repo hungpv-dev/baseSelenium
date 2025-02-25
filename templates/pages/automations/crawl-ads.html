@@ -81,7 +81,7 @@
                                             <span>Profile Name: <span class="text-primary fw-bold">{{ item.name }}</span></span><br>
                                             <span>Group: <span class="text-primary fw-bold">{{ item.group?.name || 'no' }}</span></span><br>
                                             <span>User Dir: <span class="text-primary fw-bold">{{ item.user_dir }}</span></span><br>
-                                            <span>Proxy: <span class="text-success fw-bold">{{ item.proxy ? item.proxy.ip +'@'+item.proxy.port : 'Local IP' }}</span></span>
+                                            <span>Proxy: <span class="text-success fw-bold">{{ item.proxy ? item.proxy.host +'@'+item.proxy.port : 'Local IP' }}</span></span>
                                         </td>
                                         <td class="gridjs-td" v-html="item.running == 1 
                                         ? '<span class=\'badge badge-gradient-danger\'>Running</span>' 

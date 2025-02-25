@@ -51,3 +51,41 @@ def clean_url_keep_params(href):
         # Nếu gặp lỗi, trả về href gốc
         print(f"Lỗi khi xử lý URL: {e}")
         return href
+    
+import dateparser
+def convert_to_db_format(time_string):
+        parsed_time = dateparser.parse(time_string)
+        if parsed_time:
+            # Định dạng lại thành dạng lưu database (YYYY-MM-DD HH:MM:SS)
+            return parsed_time.strftime("%Y-%m-%d %H:%M:%S")
+        return None  
+
+
+def remove_params(url, param):
+    paserd_url = urlparse(url)
+    query_params = parse_qs(paserd_url.query)
+
+    if param in query_params:
+        del query_params[param]
+
+    new_query = urlencode(query_params, doseq=True)
+    cleaned_url = urlunparse(paserd_url._replace(query=new_query)) 
+
+    return cleaned_url
+
+def clean_facebook_url_redirect(url):
+    if 'l.facebook.com/l.php?u=' in url:
+        parsed_url = urlparse(url)
+        query_params = parse_qs(parsed_url.query)
+        if 'u' in query_params:
+            return query_params['u'][0]
+    return url
+
+def is_valid_link(href, post):
+    """
+    Kiểm tra xem URL có hợp lệ hay không:
+    - Không chứa ID của bài viết.
+    - Không phải là một tệp GIF.
+    - Không phải là một URL của Facebook.
+    """
+    return post['fb_id'] not in href and '.gif' not in href and 'https://www.facebook.com' not in href

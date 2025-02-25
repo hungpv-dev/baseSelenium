@@ -1,7 +1,7 @@
 from .chrome import create_chrome
 from selenium.webdriver.common.action_chains import ActionChains
 import json
-
+import random
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
@@ -38,6 +38,11 @@ class Driver:
                     modals[index].click()
         except Exception as e:
             print(f'Lỗi click modal: {index} - {e}')
+
+    def randomSleep(self, min_time: int = 5, max_time: int = 10):
+        sleep_time = random.uniform(min_time, max_time)
+        sleep(sleep_time)
+
 
     def setCookies(self, cookies):
         if not cookies:

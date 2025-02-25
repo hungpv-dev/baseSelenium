@@ -27,14 +27,14 @@ def login(tab, driver, account):
             dataUpdate = {}
             if status_login:
                 cookies = driver.get_cookies()
-                dataUpdate['cookie'] = cookies
-                dataUpdate['status_login'] = 2
-                dataUpdate['type_edit'] = 2
+                dataUpdate['cookies'] = cookies
+                dataUpdate['status'] = 2
                 check = True
             else:
-                dataUpdate['status_login'] = 1
+                dataUpdate['status'] = 1
                 check = False
-            accounts.update(account.get('id'), dataUpdate)
+            res = accounts.update(account.get('id'), dataUpdate)
+            print(f'Update account: {res}')
     return check
 
 def check_login(driver):

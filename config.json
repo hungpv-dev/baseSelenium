@@ -2,10 +2,11 @@
     "driver": {
         "browser": "chrome",
         "headless": "false",
-        "driver_path": "C:\\Users\\Admin\\.wdm\\drivers\\chromedriver\\win64\\133.0.6943.126\\chromedriver-win32/chromedriver.exe"
+        "driver_path": "C:\\Users\\admin\\.wdm\\drivers\\chromedriver\\win64\\133.0.6943.126\\chromedriver-win32/chromedriver.exe"
     },
     "temps": {
         "profiles": "./tmp/profiles",
-        "driver": "./tmp/drivers"
+        "driver": "./tmp/drivers",
+        "path": "https://www.facebook.com/MetaHorizonDevelopers/videos/1281755476459262/?rdid=qpyn3ifoziGgzfjB"
     }
 }

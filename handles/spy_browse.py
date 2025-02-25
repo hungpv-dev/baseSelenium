@@ -1,16 +1,14 @@
-from sql import profiles
+from sql import profiles, posts
 from managers import Driver
 from .login import login
 from time import sleep
 from selenium.webdriver.common.by import By
-from urllib.parse import urlparse, parse_qs
 from stores import crawl_ads
-from helpers import clean_url_keep_params
-import json
 import pyperclip
 import re
 
 def start_crawl_up(id):
+    from handles import getContentPost
     tab = crawl_ads[id]
     profile = profiles.show(id)
 
@@ -20,7 +18,6 @@ def start_crawl_up(id):
     stop_event = tab['stop_event']
     tab['status'] = 'Bắt đầu khời tạo trình duyệt'
     account = profile.get('account')
-
     try:
         tab['status'] = 'Đang khởi tạo trình duyệt....'
         driver = Driver(profile) # Khởi tạo
@@ -34,8 +31,32 @@ def start_crawl_up(id):
 
         while not stop_event.is_set():
             status_login = login(tab, driver, account)
-            print(f'Trạng thái login: {status_login}')
-            break
+            if status_login == False:
+                tab['status'] == 'Tài khoản hiện không thể login, thử lại sau 15p',
+                sleep(900)
+                continue
+
+            # Lấy danh sách bài viết
+            try:
+                import json
+                post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)
+                for p in post_list:
+                    try:
+                        data = getContentPost(driver, p)
+                        print(json.dumps(data, indent=4))
+                        res = posts.create(data)
+                        print(f'Res: {res}')
+                        tab['status'] = 'Đã thêm dữ liệu!'
+                        print(f'======================================')
+                    except Exception as e:
+                        print(f'Lỗi khi thêm bài viết: {e}')
+                driver.get('https://facebook.com', e_wait=2)
+                driver.clickOk()
+                sleep(1)
+            except RuntimeError as e:
+                tab['status'] = f"Lỗi: {e}"
+                print(f'Lỗi khi cào bài viết: {e}')
+                sleep(300)
 
     except Exception as e:
         tab['status'] = 'Đã xảy ra lỗi....'
@@ -52,92 +73,66 @@ def stop_crawl_up(id):
     del crawl_ads[id]
 
 def extract_post_id(url):
-    match = re.search(r'/p/([a-zA-Z0-9]+)', url)
-    return match.group(1) if match else ''
+    match = re.search(r'/(p|v)/([a-zA-Z0-9]+)', url)
+    return match.group(2) if match else ''
 
-# def create_browse_link_spy_fb(account_id, stop_event):
-#     print(f'Lấy thông tin account: {account_id}')
-#     account = accounts.find(account_id)
-#     print(f"Account: {account.get('name')}")
-#     print('Khởi tạo trình duyệt')
-#     driver = Driver()
-#     print('Login với cookie')
-#     driver.get('https://facebook.com', e_wait=2)
-#     status_login = check_login(driver)
-#     if status_login is False:
-#         driver.setCookies(account.get('cookies'))
-#         driver.get('https://facebook.com', e_wait=3)
-#         accept_all_cookies = driver.find_all('//*[@aria-label="Allow all cookies"]', last=True)
-#         if accept_all_cookies:
-#             accept_all_cookies.click()
-#         print('Kiểm tra trạng thái login')
-#         status_login = check_login(driver)
-#         if status_login is False:
-#             print('Login không thành công, bắt đầu login...')
-#             login_with_user_pass(driver, account)
-#             status_login = check_login(driver)
-#             print(f'Login: {status_login}')
-#             if status_login:
-#                 cookies = driver.get_cookies()
-#                 print(cookies)
-#                 accounts.update(account_id,{
-#                     'cookies': cookies,
-#                 })
+def create_browser_link_spy_fb(driver, account, stop_event, tab):
+    list_posts = []
+    listId = set()
+    tab['status'] = 'Room nhỏ màn hình!'
+    print('Room nhỏ màn hình')
+    sleep(3)
+    while not stop_event.is_set():
+        tab['status'] = 'Bắt đầu cào bài viết!'
+        listPosts = driver.find_all('//*[@aria-posinset]') 
+        print(f'Số bài viết lấy được: {len(listPosts)}')
 
-#     print('Login thành công')
-#     # pageLinkPost = f"/posts/"
-#     # pageLinkStory = "https://www.facebook.com/permalink.php"
-#     listId = set()
-#     while not stop_event.is_set():
-#         print('Room nhỏ màn hình')
-#         driver.execute_script("document.body.style.zoom='0.2';")
-#         actions = driver.action_chains()
-#         sleep(3)
-#         listPosts = driver.find_all('//*[@aria-posinset]') 
-#         print(f'Số bài viết lấy được: {len(listPosts)}')
-#         for p in listPosts:
-#             try:
-#                 stt = p.get_attribute('aria-posinset')
-#                 if stt not in listId:
-#                     print(f'Bài số: {stt}')
-#                     listId.add(stt)
-#                     links = p.find_elements(By.XPATH, ".//a")
-#                     for link in links:
-#                         if link.is_displayed() and link.size['width'] > 0 and link.size['height'] > 0:
-#                             actions.move_to_element(link).perform()
-#                             href = link.get_attribute('href')
-#                             if '/ads/' in href:
-#                                 try:
-#                                     share = p.find_element(By.XPATH, '//*[@aria-label="Send this to friends or post it on your profile."]')
-#                                     actions.move_to_element(share).perform()
-#                                     share.click()
-#                                     sleep(3)
-#                                     parent_element = driver.find_element(By.XPATH, ".//*[@aria-label='List of available \"share to\" options in the unified share sheet.']")
-#                                     list = parent_element.find_elements(By.XPATH, "./div/div/div")
-#                                     for item in list:
-#                                         item_text = item.text.lower()
-#                                         if "copy link" in item_text:
-#                                             item.click()
-#                                             sleep(2)
-#                                             break
+        if len(listPosts) == 0:
+            raise RuntimeError('Không tìm thấy bài viết nào để duyệt.')
+
+        actions = driver.action_chains()
+        for p in listPosts:
+            try:
+                stt = p.get_attribute('aria-posinset')
+                if stt not in listId:
+                    listId.add(stt)
+                    links = p.find_elements(By.XPATH, ".//a")
+                    for link in links:
+                        if link.is_displayed() and link.size['width'] > 0 and link.size['height'] > 0:
+                            actions.move_to_element(link).perform()
+                            href = link.get_attribute('href')
+                            if '/ads/' in href:
+                                print(f"==> {href}")
+                                try:
+                                    share = p.find_element(By.XPATH, './/*[@aria-label="Send this to friends or post it on your profile."]')
+                                    actions.move_to_element(share).perform()
+                                    share.click()
+                                    sleep(3)
+                                    parent_element = driver.find_element(By.XPATH, ".//*[@aria-label='List of available \"share to\" options in the unified share sheet.']")
+                                    list = parent_element.find_elements(By.XPATH, "./div/div/div")
+                                    for item in list:
+                                        item_text = item.text.lower()
+                                        if "copy link" in item_text:
+                                            item.click()
+                                            sleep(2)
+                                            break
                                     
-#                                     fb_link = pyperclip.paste()
-#                                     fb_id = extract_post_id(fb_link)
-#                                     data = [account_id, fb_link, fb_id]
-#                                     posts.create(data)
-#                                     print(json.dumps(data, indent=4))
-#                                 except Exception as e:
-#                                     print(f'Lỗi click share: {e}')
-#                                 break
-#             except Exception as e:
-#                 print(e)
-#         if len(listId) >= 20:
-#             print('Đã được 20 bài viết, refresh trang!')
-#             driver.refresh() 
-#             listId.clear() 
-#             driver.execute_script("document.body.style.zoom='0.2';")
-#             sleep(3)
-#         else:
-#             driver.execute_script("window.scrollBy(0, 500);")
-#         sleep(5)
-#     driver.quit()
+                                    fb_link = pyperclip.paste()
+                                    fb_id = extract_post_id(fb_link)
+                                    list_posts.append({
+                                        'account_id': account.get('id'),
+                                        'fb_link': fb_link,
+                                        'fb_id': fb_id,
+                                    })
+                                    if len(list_posts) >= 5:
+                                        print('Đã thu thập đủ 5 bài viết, trả về danh sách.')
+                                        return list_posts
+                                except Exception as e:
+                                    print(f'Lỗi click share {stt}: {e}')
+                                break
+            except Exception as e:
+                print(e)
+        driver.randomSleep()
+        tab['status'] = 'Cuộn chuột xuống!'
+        driver.execute_script("window.scrollBy(0, 200);")
+        sleep(5)
