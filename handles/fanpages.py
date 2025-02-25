@@ -145,16 +145,20 @@ def getContentPost(driver, post):
                 listCount = listCount.replace(string, '')
 
             listCount = listCount.split('\n')
-            
-            if listCount:
-                data['like'] = listCount[1] if len(listCount) > 1 else 0
-                if data['like'] == 'Comment':
-                    data['like'] = 0
-                for dyamic in listCount:
-                    if selectDyamic['comment'] in dyamic:
-                        data['comment'] = dyamic
-                    if selectDyamic['share'] in dyamic:
-                        data['share'] = dyamic
+            filtered_list = [item for item in listCount if item.strip()] # Lại bỏ thằng rỗng
+            def extract_number(text):
+                match = re.search(r'[\d,.KM]+', text)  # Tìm số có thể có đơn vị K, M
+                return match.group() if match else '0'
+
+            # Gán giá trị
+            if len(filtered_list) >= 1:
+                data['like'] = extract_number(filtered_list[0])
+
+            if len(filtered_list) >= 2:
+                data['comment'] = extract_number(filtered_list[1])
+
+            if len(filtered_list) >= 3:
+                data['share'] = extract_number(filtered_list[2])
         except Exception as e:
             print(f"Không lấy được like, comment, share")
         
