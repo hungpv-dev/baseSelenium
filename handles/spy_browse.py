@@ -36,22 +36,31 @@ def start_crawl_up(id):
                 sleep(900)
                 continue
 
+            # import json
+            # p = {
+            #     'fb_id': 'qpyn3ifoziGgzfjB',
+            #     'fb_link': 'https://www.facebook.com/MetaHorizonDevelopers/videos/1281755476459262/?rdid=qpyn3ifoziGgzfjB',
+            #     'account_id': 1,
+            # }
+            # data = getContentPost(driver, p)
+            # print(json.dumps(data, indent=4))
+            # sleep(10000)
             # Lấy danh sách bài viết
             try:
-                import json
+                driver.get('https://facebook.com', e_wait=2)
+                driver.clickOk()
+
                 post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)
                 for p in post_list:
                     try:
                         data = getContentPost(driver, p)
-                        print(json.dumps(data, indent=4))
+                        # print(json.dumps(data, indent=4))
                         res = posts.create(data)
                         print(f'Res: {res}')
                         tab['status'] = 'Đã thêm dữ liệu!'
                         print(f'======================================')
                     except Exception as e:
                         print(f'Lỗi khi thêm bài viết: {e}')
-                driver.get('https://facebook.com', e_wait=2)
-                driver.clickOk()
                 sleep(1)
             except RuntimeError as e:
                 tab['status'] = f"Lỗi: {e}"

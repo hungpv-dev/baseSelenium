@@ -6,7 +6,6 @@
     },
     "temps": {
         "profiles": "./tmp/profiles",
-        "driver": "./tmp/drivers",
-        "path": "https://www.facebook.com/MetaHorizonDevelopers/videos/1281755476459262/?rdid=qpyn3ifoziGgzfjB"
+        "driver": "./tmp/drivers"
     }
 }

@@ -42,7 +42,9 @@ def getContentPost(driver, post):
             else:
                 driver.closeModal(0)
         else: 
-            raise Exception('Không tìm thấy Modal')
+            print('Không thấy modal')
+            # modal = driver
+            # raise Exception('Không tìm thấy Modal')
         sleep(1)
         data = {
             'content': '',
@@ -62,33 +64,54 @@ def getContentPost(driver, post):
 
         timeUp = None
         try:
-            linkTimeUp = WebDriverWait(modal, 5).until(
+            print('Lấy time up')
+            if modal is None:
+                container = driver
+            else:
+                container = modal
+            linkTimeUp = WebDriverWait(container, 5).until(
                 EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
             )
-            if linkTimeUp and len(linkTimeUp) > 0:
+            if linkTimeUp:
                 for link in linkTimeUp:
-                    try:
-                        rect = link.rect
-                        if rect['width'] > 0 and rect['height'] > 0:
-                            # Xử lý text của thẻ
-                            href_text = link.text.strip()
-                            cleaned_text = re.sub(r'[^a-zA-Z0-9 ]', '', href_text)
-                            formatted_time = convert_to_db_format(cleaned_text)
-                            if formatted_time:
-                                timeUp = formatted_time
-                    except StaleElementReferenceException:
-                        print("Element no longer in the DOM, retrying...")
+                    retry_count = 3 
+                    while retry_count > 0:
+                        try:
+                            rect = link.rect
+                            if rect['width'] > 0 and rect['height'] > 0:
+                                href_text = link.text.strip()
+                                cleaned_text = re.sub(r'[^a-zA-Z0-9 ]', '', href_text)
+                                formatted_time = convert_to_db_format(cleaned_text)
+                                print(formatted_time)
+                                if formatted_time:
+                                    timeUp = formatted_time
+                            break  # Nếu thành công thì thoát vòng lặp
+                        except Exception as e:
+                            print(f"Lỗi time up: {e}")
+                            if "stale element" in str(e).lower():
+                                print("Element is stale, re-locating...")
+                                linkTimeUp = WebDriverWait(container, 5).until(
+                                    EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
+                                )
+                                link = linkTimeUp[0]  # Lấy lại phần tử đầu tiên
+                            else:
+                                break 
+                        retry_count -= 1
                         sleep(1)
-                        continue
-        except StaleElementReferenceException:
+
+        except Exception as ea:
+            print(f"Lỗi time up ngoài: {ea}")
             print("The element is stale and cannot be accessed.")
         
         data['time_up'] = timeUp
-        content, content_link = extract_facebook_content(modal)
+        print('Lấy content')
+        content, content_link = extract_facebook_content(modal, driver)
         data['content'] = content
         data['content_link'] = content_link
+        print(data)
 
         # Lấy ảnh và video
+        print('Lấy hình ảnh')
         media = None
         try:
             media = modal.find_element(By.XPATH,'.//*[@data-ad-rendering-role="story_message"]/parent::div/following-sibling::div')
@@ -96,6 +119,8 @@ def getContentPost(driver, post):
             media = modal
             
         media = modal
+        if modal == None:
+            media = driver.find('//*[@role="main"]') 
         try:
             images = media.find_elements(By.XPATH, './/img')
             for img in images:
@@ -111,7 +136,10 @@ def getContentPost(driver, post):
             print(f'Bài viết k có ảnh hoặc video')
 
         try:
-            like_share_element = modal.find_element(By.XPATH, './/*[@data-visualcompletion="ignore-dynamic"]/div/div/div/div')
+            if modal == None:
+                like_share_element = driver.find('//*[@role="complementary"]/div/div/div/div/div/div[2]/div')
+            else:
+                like_share_element = modal.find_element(By.XPATH, './/*[@data-visualcompletion="ignore-dynamic"]/div/div/div/div')
             listCount = like_share_element.text
             for string in removeDyamic:
                 listCount = listCount.replace(string, '')
@@ -135,6 +163,8 @@ def getContentPost(driver, post):
         data['share'] = convert_shorthand_to_number(data['share'])
 
         # Lấy comment
+        if modal == None:
+            modal = driver
         try:
             scroll = modal.find_element(By.XPATH, './div/div/div/div[2]')
             driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scroll)
@@ -269,7 +299,7 @@ def getContentPost(driver, post):
         print(f'Lỗi khi lấy content: {e}')
         return None
 
-def extract_facebook_content(modal):
+def extract_facebook_content(modal, driver):
     removeString = [
         '\n',
         '·',
@@ -278,6 +308,10 @@ def extract_facebook_content(modal):
         'See original',     # Xem bản gốc
         'Rate this translation'  # Xếp hạng bản dịch này
     ]
+    is_none = False
+    if modal == None:
+        is_none = True
+        modal = driver.find('//*[@role="complementary"]') 
 
     try:
         try:
@@ -292,7 +326,10 @@ def extract_facebook_content(modal):
             print(f'Click see more không thành công: {e}')
         
         content_link = []
-        content = modal.find_element(By.XPATH, './/*[@data-ad-rendering-role="story_message"]')
+        if is_none: 
+            content = modal.find_element(By.XPATH, "./div/div/div/div/div/div/div[3]")
+        else:
+            content = modal.find_element(By.XPATH, './/*[@data-ad-rendering-role="story_message"]')
 
         replace_content = []
         a_tags = content.find_elements(By.XPATH,'.//a')
