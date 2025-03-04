@@ -1,64 +1,57 @@
-import undetected_chromedriver as uc
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium import webdriver
+from seleniumbase import Driver
 from helpers import create_extension_with_proxy, config
 import random
 import os
 import socket
 
-def create_chrome(profile, undetected=False, debug_port=None):
-    options = uc.ChromeOptions() if undetected else Options()
-    execute_path = config('driver')['driver_path']
+def create_chrome(profile):
+    # Thiết lập chế độ headless
+    headless_mode = config('driver')['headless'] == "true"
 
-    # Cấu hình cache
+    # Cấu hình User-Agent
+    user_agent = profile.get('user_agent', None) if profile else None
+
+    # Cấu hình thư mục Profile
+    user_data_dir = None
+
     if profile:
-        user_dir = os.path.abspath(profile.get('user_dir'))
-        options.add_argument(f'--user-data-dir={user_dir}')
-        options.add_argument(f'--disk-cache-dir={user_dir}/cache')
+        user_dir = profile.get('user_dir')  
+        if user_dir:
+            user_data_dir = os.path.abspath(user_dir)
 
-        if profile.get('proxy') and profile.get('proxy') != 'no':
-            extension_proxy = create_extension_with_proxy(user_dir, profile.get('proxy'))
-            if os.path.exists(extension_proxy):
-                full_path_extension = os.path.abspath(extension_proxy)
-                options.add_argument(f'--load-extension={full_path_extension}')
-    
-    # Cấu hình user-agent
-    default_user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-    user_agent = profile.get('user_agent', default_user_agent) if profile else default_user_agent
-    options.add_argument(f"--user-agent={user_agent}")
-    
-    # Các tùy chọn khác
-    options.add_argument("--disable-notifications")
-    options.add_argument("--disable-save-password-bubble")
-    options.add_argument("--disable-popup-blocking")
-    options.add_argument("--disable-infobars")
-    options.add_argument("--start-maximized")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    
-    # Xác định remote debugging port
-    if not debug_port:
-        debug_port = get_available_port()
-    options.add_argument(f"--remote-debugging-port={debug_port}")
-    
-    # Khởi tạo driver
-    if undetected:
-        driver = uc.Chrome(
-            execute_path=execute_path,
-            options=options,
-            use_subprocess=True
-        )
-    else:
-        print('Start')
-        driver = webdriver.Chrome(service=Service(executable_path=execute_path), options=options)
-    
-    # Chống phát hiện Selenium
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-    driver.execute_script("""
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-    """)
-    
+    # Cấu hình Proxy (Nếu có)
+    proxy_config = None
+    if profile:
+        proxy = profile.get('proxy')
+        if proxy and isinstance(proxy, dict) and proxy.get('host') and proxy.get('port'):
+            proxy_host = proxy['host']
+            proxy_port = proxy['port']
+            username = proxy.get('user')
+            password = proxy.get('pass')
+            if username and password:
+                proxy_config = f"{username}:{password}@{proxy_host}:{proxy_port}"
+            else:
+                proxy_config = f"{proxy_host}:{proxy_port}"
+
+    # Khởi tạo trình duyệt với SeleniumBase
+    print(f"user agent: {user_agent}")
+    driver = Driver(
+        uc=True,  # Bật chế độ chống phát hiện bot (UnDetectable)
+        headless=headless_mode,  # Chế độ Headless
+        incognito=False,  # Không mở trình duyệt ẩn danh
+        browser="chrome",  # Trình duyệt Chrome
+        proxy=proxy_config,  # Proxy dạng "IP:PORT" (nếu không có username/password)
+        window_size="1920,1080",
+        undetectable=True,
+        disable_csp=True,  # Bỏ qua Content Security Policy
+        enable_ws=True,  # Bật Web Security
+        no_sandbox=True,  # Chạy trình duyệt mà không cần sandbox (tránh hạn chế)
+        disable_gpu=True,  # Tắt GPU tăng tính ổn định
+        do_not_track=True,
+        user_data_dir=user_data_dir,  # Hồ sơ Chrome có thể copy
+        # agent=user_agent,  # User-Agent
+    )
+
     return driver
 
 def get_available_port(start=9223, end=9999):
