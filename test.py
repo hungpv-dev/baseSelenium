@@ -145,4 +145,57 @@ if search_box:
                 random_delay(5, 7)
         except Exception as e:
             print(f"Không thể truy cập nhóm: {e}")
+
+driver.execute_script("window.open('https://www.google.com', '_blank');")
+driver.switch_to.window(driver.window_handles[-1])
+
+# Tìm và nhập từ khóa vào ô tìm kiếm
+search_box = driver.find("textarea[name='q']", type_query='css', wait=10)
+if search_box:
+    type_like_human(search_box, "Đồ chơi gỗ\n")
+
+# Đợi một chút để xem kết quả
+random_delay(5, 7)
+
+# Tìm và truy cập vào 5 liên kết đầu tiên có thuộc tính jsname="UWckNb"
+links = driver.find_all("a[jsname='UWckNb']", type_query='css', wait=10)
+if links:
+    valid_links_count = 0
+    for index in range(len(links)):
+        if valid_links_count >= 5:
+            break
+        try:
+            link = links[index]
+            href = link.get_attribute('href')
+            if not href:
+                print(f"Liên kết không có thuộc tính href, bỏ qua.")
+                continue
+
+            # Cuộn đến phần tử trước khi click
+            driver.execute_script("arguments[0].scrollIntoView(true);", link)
+            random_delay(1, 2)
+
+            # Thực hiện click vào liên kết
+            try:
+                link.click()
+            except ElementClickInterceptedException:
+                driver.execute_script("arguments[0].click();", link)
+
+            print(f"Lướt qua liên kết {valid_links_count + 1}: {href}")
+            random_delay(10, 15)  # Lướt trang từ 10-15s
+            random_scroll(driver)
+            random_delay(10, 15)  # Lướt trang từ 10-15s
+            random_scroll(driver)
+            random_delay(10, 15)  # Lướt trang từ 10-15s
+            driver.back()
+            random_delay(3, 6)
+            random_scroll(driver)
+            random_delay(3, 6)
+            valid_links_count += 1
+        except StaleElementReferenceException:
+            print(f"Liên kết đã thay đổi hoặc không còn tồn tại, bỏ qua.")
+            continue
+        except Exception as e:
+            print(f"Không thể lấy thuộc tính href của liên kết: {e}")
+            continue
 driver.quit()
