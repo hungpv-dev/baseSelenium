@@ -8,8 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 class Driver:
-    def __init__(self, profile=None, undetected = True):
-        self.driver = create_chrome(profile=profile,undetected=undetected)
+    def __init__(self, profile=None):
+        self.driver = create_chrome(profile=profile)
         self.type_find_element = {
             'xpath': By.XPATH,
             'id': By.ID,
@@ -67,7 +67,7 @@ class Driver:
                 EC.presence_of_element_located((self.type_find_element.get(type_query), query))
             )
             if send_keys is not None:
-                result.send_keys(send_keys)
+                self.send_keys_humman(result, send_keys)
         except NoSuchElementException as e:
             print(f'No search: {query}')
         except TimeoutException as e:
@@ -129,5 +129,12 @@ class Driver:
         else:
             print(f'Index {index} out of range. There are only {len(handles)} tabs open.')
 
+    
+    def send_keys_humman(self, element, text, delay_range=(0.1, 0.3)):
+        """Nhập văn bản vào một phần tử với hiệu ứng nhập bằng tay"""
+        for char in text:
+            element.send_keys(char)
+            sleep(random.uniform(*delay_range))
+    
     def quit(self):
         self.driver.quit()
