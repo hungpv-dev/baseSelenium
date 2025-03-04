@@ -90,6 +90,11 @@ class Driver:
         
         return results
 
+    def random_delay(self, min_time=30, max_time=60):
+        """Tạo độ trễ ngẫu nhiên"""
+        sleep(random.uniform(min_time, max_time))
+
+
     def clickText(self, text, wait=0):
         try:
             xpath = f"//*[contains(text(), '{text}')]"
