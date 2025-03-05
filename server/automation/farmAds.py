@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from helpers import config
-from handles import start_farm_up, stop_farm_up
+from handles import start_crawl_up, stop_crawl_up
 from stores import farm_ads as farm_adsStore
 import threading
 from sql import profiles
@@ -63,5 +63,6 @@ def start_profile_thread(profile_id):
         'stop_event': stop_event,
         'thread': thread,
     }
+    print(farm_adsStore)
     thread.start()
     

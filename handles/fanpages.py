@@ -53,6 +53,7 @@ def getContentPost(driver, post):
             'fb_id': post["fb_id"],
             "comment": 0,
             "like": 0,
+            "view": 0,
             "share": 0,
             'medias' : {
                 'images': [],
@@ -82,7 +83,6 @@ def getContentPost(driver, post):
                                 href_text = link.text.strip()
                                 cleaned_text = re.sub(r'[^a-zA-Z0-9 ]', '', href_text)
                                 formatted_time = convert_to_db_format(cleaned_text)
-                                print(formatted_time)
                                 if formatted_time:
                                     timeUp = formatted_time
                             break  # Nếu thành công thì thoát vòng lặp
@@ -108,7 +108,6 @@ def getContentPost(driver, post):
         content, content_link = extract_facebook_content(modal, driver)
         data['content'] = content
         data['content_link'] = content_link
-        print(data)
 
         # Lấy ảnh và video
         print('Lấy hình ảnh')
@@ -141,30 +140,57 @@ def getContentPost(driver, post):
             else:
                 like_share_element = modal.find_element(By.XPATH, './/*[@data-visualcompletion="ignore-dynamic"]/div/div/div/div')
             listCount = like_share_element.text
+            print(f'Like count: {listCount}')
             for string in removeDyamic:
                 listCount = listCount.replace(string, '')
 
             listCount = listCount.split('\n')
+            print(f'Like count remove: {listCount}')
             filtered_list = [item for item in listCount if item.strip()] # Lại bỏ thằng rỗng
             def extract_number(text):
                 match = re.search(r'[\d,.KM]+', text)  # Tìm số có thể có đơn vị K, M
                 return match.group() if match else '0'
+            
+            print(f'filter: {filtered_list}')
+            if modal is None:
+                # Gán giá trị
+                if len(filtered_list) >= 1:
+                    data['like'] = extract_number(filtered_list[1])
 
-            # Gán giá trị
-            if len(filtered_list) >= 1:
-                data['like'] = extract_number(filtered_list[0])
+                if len(filtered_list) >= 4:
+                    data['comment'] = extract_number(filtered_list[2])
 
-            if len(filtered_list) >= 2:
-                data['comment'] = extract_number(filtered_list[1])
-
-            if len(filtered_list) >= 3:
-                data['share'] = extract_number(filtered_list[2])
+                if len(filtered_list) >= 3:
+                    data['view'] = extract_number(filtered_list[-1])
+                
+                if len(filtered_list) >= 5:
+                    data['share'] = extract_number(filtered_list[4])
+            else:
+                if listCount:
+                    data['like'] = listCount[1] if len(listCount) > 1 else 0
+                    if data['like'] == 'Comment':
+                        data['like'] = 0
+                    for dyamic in listCount:
+                        if selectDyamic['comment'] in dyamic:
+                            data['comment'] = dyamic
+                        if selectDyamic['share'] in dyamic:
+                            data['share'] = dyamic
+            
         except Exception as e:
             print(f"Không lấy được like, comment, share")
         
         data['like'] = convert_shorthand_to_number(data['like'])
         data['comment'] = convert_shorthand_to_number(data['comment'])
         data['share'] = convert_shorthand_to_number(data['share'])
+        data['view'] = convert_shorthand_to_number(data['view'])
+
+        ifame = ''
+        print(f"Model: {modal}")
+        if modal is None:
+            url_post = driver.current_url
+            video_path = extract_video_path(url_post)
+            ifame = f'https://www.facebook.com/plugins/video.php?height=476&href=https://www.facebook.com/{video_path}'
+        data['ifame'] = ifame
 
         # Lấy comment
         if modal == None:
@@ -293,7 +319,6 @@ def getContentPost(driver, post):
             data['medias']['images'] = filtered_images
         except Exception as e:
             print(e)
-
         merged_data = {
             "post": data,
             "comments": dataComment
@@ -302,6 +327,11 @@ def getContentPost(driver, post):
     except Exception as e:
         print(f'Lỗi khi lấy content: {e}')
         return None
+
+def extract_video_path(url):
+    # Regex để bắt đoạn "page/videos/ID"
+    match = re.search(r'([^/]+)/videos/\d+', url)
+    return match.group(0) if match else None
 
 def extract_facebook_content(modal, driver):
     removeString = [
@@ -351,6 +381,8 @@ def extract_facebook_content(modal, driver):
                     })
 
         contentText = content.text
+        contentText = contentText.replace('See less','')
+        
         for rep in replace_content:
             contentText = contentText.replace(rep.get('text'), rep.get('link'))
 

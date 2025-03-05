@@ -3,7 +3,7 @@ from managers import Driver
 from .login import login
 from time import sleep
 from selenium.webdriver.common.by import  By
-from stores import crawl_ads
+from stores import farm_ads
 import pyperclip
 import time
 import random
@@ -15,135 +15,139 @@ import re
 
 def start_crawl_up(id):
     from handles import getContentPost
-    tab = crawl_ads[id]
+    tab = farm_ads[id]
     profile = profiles.show(id)
 
     if not tab or not profile:
         return
-    
     stop_event = tab['stop_event']
-    tab['status'] = 'Bắt đầu khời tạo trình duyệt'
-    account = profile.get('account')
-    keywords = [
-    "Wooden toys",
-    "Wood toys",
-    "Toys made of wood",
-    "Children's wooden toys",
-    "Kids wooden toys",
-    "Natural wooden toys",
-    "Eco-friendly wooden toys",
-    "Handmade wooden toys",
-    "Wooden toy shop",
-    "Wooden toy store",
-    "Wooden building blocks",
-    "Wooden puzzles",
-    "Wooden stacking toys",
-    "Wooden pull toys",
-    "Wooden toy cars",
-    "Wooden toy trains",
-    "Wooden dollhouses",
-    "Wooden kitchen toys",
-    "Wooden educational toys",
-    "Montessori wooden toys",
-    "Safe wooden toys",
-    "Non-toxic wooden toys",
-    "Sustainable wooden toys",
-    "Wooden toy gifts",
-    "Wooden toy for toddlers",
-    "Wooden toy for preschoolers"
-    ]
-    try:
-        tab['status'] = 'Đang khởi tạo trình duyệt....'
-        driver = Driver(profile) # Khởi tạo
-        
-        tab['check'] = 1
-        tab['status_process'] = 1
-        tab['status'] = 'Đã khởi tạo trình duyệt'
-
-        tab['status'] = 'Đang chuyển hướng facebook...'
-        driver.get('https://facebook.com', e_wait=3)
-
-        while not stop_event.is_set():
-            status_login = login(tab, driver, account)
-            if status_login == False:
-                tab['status'] == 'Tài khoản hiện không thể login, thử lại sau 15p',
-                sleep(900)
-                continue
+    while not stop_event.is_set():
+        tab['status'] = 'Bắt đầu khời tạo trình duyệt'
+        account = profile.get('account')
+        keywords = [
+            "Wooden toys",
+            "Wood toys",
+            "Toys made of wood",
+            "Children's wooden toys",
+            "Kids wooden toys",
+            "Natural wooden toys",
+            "Eco-friendly wooden toys",
+            "Handmade wooden toys",
+            "Wooden toy shop",
+            "Wooden toy store",
+            "Wooden building blocks",
+            "Wooden puzzles",
+            "Wooden stacking toys",
+            "Wooden pull toys",
+            "Wooden toy cars",
+            "Wooden toy trains",
+            "Wooden dollhouses",
+            "Wooden kitchen toys",
+            "Wooden educational toys",
+            "Montessori wooden toys",
+            "Safe wooden toys",
+            "Non-toxic wooden toys",
+            "Sustainable wooden toys",
+            "Wooden toy gifts",
+            "Wooden toy for toddlers",
+            "Wooden toy for preschoolers"
+        ]
+        try:
+            tab['status'] = 'Đang khởi tạo trình duyệt....'
+            driver = Driver(profile) # Khởi tạo
             
-        search_box = driver.find("input[type='search']", type_query='css', wait=10)
-        if search_box:
+            tab['check'] = 1
+            tab['status_process'] = 1
+            tab['status'] = 'Đã khởi tạo trình duyệt'
+
+            tab['status'] = 'Đang chuyển hướng facebook...'
+            driver.get('https://facebook.com', e_wait=3)
+
+            while not stop_event.is_set():
+                status_login = login(tab, driver, account)
+                if status_login == False:
+                    print('Login succes')
+                    tab['status'] == 'Tài khoản hiện không thể login, thử lại sau 15p',
+                    raise Exception('Login failed')
+                    sleep(900)
+                    continue
+                else: 
+                    break
+            tab['status'] = 'Số từ khoá cần search: ' + str(len(keywords))
+
             for key in keywords:
-                type_like_human(search_box, key)
-                driver.random_delay(1, 2)
-                search_box.send_keys(Keys.ENTER)
-                driver.random_delay(5, 7)
-                for i in range(3):  # Chạy từ index 0 đến index 1
-                    group_link = getLinkFanpage(driver, i)
-                    if group_link is None:
-                        print(f"Không tìm thấy nhóm hợp lệ ở index {i}, bỏ qua.")
-                        continue
-
-                    try:
-                        # Đóng popup nếu có
+                print('Xử lý từ khoá: ', key)
+                tab['status'] = f"Đang xử lý từ khoá: '{key}'"
+                try:
+                    print('Search: ', key)
+                    search_box = driver.find("input[type='search']", type_query='css', wait=10, send_keys=key)
+                    search_box.send_keys(Keys.ENTER)
+                    driver.random_delay(5, 7)
+                    index = 0
+                    while not stop_event.is_set():
                         try:
-                            close_popup = driver.find_element(By.CSS_SELECTOR, "div[role='dialog'] button")
-                            close_popup.click()
-                            print("Đã đóng popup.")
-                        except:
-                            pass  # Không có popup thì bỏ qua
-                        click_element_safely(driver, group_link)
-                        driver.random_delay(5, 7)
-                        scroll_and_like_posts(driver, duration=60)
-                        driver.back()
-                        driver.random_delay(3, 5)
-                    except Exception as e:
-                        print(f"Không thể truy cập nhóm {i}: {e}")
+                            index = index + 1
+                            if index > 3:
+                                break
+                            group_link = getLinkFanpage(driver, index)
+                            actions = driver.action_chains()
+                            if group_link is None:
+                                print(f"Từ khoá: {key} no {index}, bỏ qua.")
+                                break
+                            print(f'Fanpage: {group_link.text}')
+                            actions.move_to_element(group_link)
+                            driver.random_delay(2, 3)
+                            group_link.click()
+                            driver.random_delay(5, 7)
+                            print('Scroll fanpage')
+                            scroll_and_like_posts(driver, duration=60)
+                            driver.back()
+                            driver.random_delay(3, 5)
+                        except Exception as e:
+                            print(f'Lỗi click page: {e}')
+                            continue
+                except Exception as e:
+                    print(f'Lỗi xảy ra: {e}')
 
-                    # import json
-                    # p = {
-                    #     'fb_id': 'qpyn3ifoziGgzfjB',
-                    #     'fb_link': 'https://www.facebook.com/MetaHorizonDevelopers/videos/1281755476459262/?rdid=qpyn3ifoziGgzfjB',
-                    #     'account_id': 1,
-                    # }
-                    # data = getContentPost(driver, p)
-                    # print(json.dumps(data, indent=4))
-                    # sleep(10000)
-                    # Lấy danh sách bài viết
+            print('Fanapge trang chu')
+            tab['status'] = f"Bắt đầu lướt trang chủ lấy bài viết!"
+            try:
+                driver.get('https://facebook.com/home.php', e_wait=2)
+                print('Chuyển hướng facebook')
+                driver.clickOk()
+                sleep(1)
+
+                post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)
+                print('Số bài viết lấy được: ', len(post_list))
+                tab['status'] = f"Đã lấy được {len(post_list)} bài viết!"
+                for p in post_list:
                     try:
-                        driver.get('https://facebook.com', e_wait=2)
-                        print('Chuyển hướng facebook')
-                        driver.clickOk()
-
-                        post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)
-                        for p in post_list:
-                            try:
-                                data = getContentPost(driver, p)
-                                # print(json.dumps(data, indent=4))
-                                res = posts.create(data)
-                                print(f'Res: {res}')
-                                tab['status'] = 'Đã thêm dữ liệu!'
-                                print(f'======================================')
-                            except Exception as e:
-                                print(f'Lỗi khi thêm bài viết: {e}')
-                        sleep(1)
-                    except RuntimeError as e:
-                        tab['status'] = f"Lỗi: {e}"
-                        print(f'Lỗi khi cào bài viết: {e}')
-                        sleep(300)
-
+                        data = getContentPost(driver, p)
+                        # print(json.dumps(data, indent=4))
+                        res = posts.create(data)
+                        print(f'Res: {res}')
+                        tab['status'] = 'Đã thêm dữ liệu!'
+                        print(f'======================================')
+                    except Exception as e:
+                        print(f'Lỗi khi thêm bài viết: {e}')
+                sleep(1)
             except Exception as e:
-                tab['status'] = 'Đã xảy ra lỗi....'
-                print(f"Đã có lỗi xảy ra: {e}")
-            finally:
-                tab['status'] = 'Đang đóng....'
-                driver.quit()
-                print('Trình duyệt đã bị đóng')
+                tab['status'] = f"Lỗi: {e}"
+                print(f'Lỗi khi cào bài viết: {e}')
+        except Exception as e:
+            tab['status'] = 'Đã xảy ra lỗi....'
+            print(f"Đã có lỗi xảy ra: {e}")
+        finally:
+            tab['status'] = 'Đang đóng....'
+            driver.quit()
+            print('Trình duyệt đã bị đóng')
+        sleep(3600)
 
-        def stop_crawl_up(id):
-            thread = crawl_ads[id]['thread']
-            thread.join()
-            crawl_ads[id]['check'] = 1
-            del crawl_ads[id]
+def stop_crawl_up(id):
+    thread = farm_ads[id]['thread']
+    thread.join()
+    farm_ads[id]['check'] = 1
+    del farm_ads[id]
 
 def extract_post_id(url):
     match = re.search(r'/(p|v)/([a-zA-Z0-9]+)', url)
@@ -175,36 +179,37 @@ def create_browser_link_spy_fb(driver, account, stop_event, tab):
                             actions.move_to_element(link).perform()
                             href = link.get_attribute('href')
                             if '/ads/' in href:
-                                print(f"==> {href}")
                                 try:
                                     share = p.find_element(By.XPATH, './/*[@aria-label="Send this to friends or post it on your profile."]')
                                     actions.move_to_element(share).perform()
                                     share.click()
-                                    sleep(5)
-                                    parent_element = driver.find_element(By.XPATH, ".//*[@aria-label='List of available \"share to\" options in the unified share sheet.']")
-                                    list = parent_element.find_elements(By.XPATH, "./div/div/div")
-                                    for item in list:
-                                        item_text = item.text.lower()
-                                        if "copy link" in item_text:
-                                            item.click()
-                                            sleep(2)
-                                            break
-                                    
-                                    fb_link = pyperclip.paste()
-                                    fb_id = extract_post_id(fb_link)
-                                    list_posts.append({
-                                        'account_id': account.get('id'),
-                                        'fb_link': fb_link,
-                                        'fb_id': fb_id,
-                                    })
+                                    sleep(10)
+                                    parent_element = driver.find(".//*[@aria-label='List of available \"share to\" options in the unified share sheet.']")
+                                    if parent_element:
+                                        list = parent_element.find_elements(By.XPATH, "./div/div/div")
+                                        for item in list:
+                                            item_text = item.text.lower()
+                                            if "copy link" in item_text:
+                                                item.click()
+                                                sleep(2)
+                                                break
+                                        
+                                        fb_link = pyperclip.paste()
+                                        fb_id = extract_post_id(fb_link)
+                                        list_posts.append({
+                                            'account_id': account.get('id'),
+                                            'fb_link': fb_link,
+                                            'fb_id': fb_id,
+                                        })
+                                        print(f"Bài số: {len(list_posts)} - {fb_link}")
+                                        tab['status'] = f'Đã thêm bài viết {len(list_posts)}/20!'
                                 except Exception as e:
                                     print(f'Lỗi click share {stt}: {e}')
-                                    return list_posts
                                 break
             except Exception as e:
                 print(e)
-        if len(list_posts) >= 5:
-            print('Đã thu thập đủ 5 bài viết, trả về danh sách.')
+        if len(list_posts) >= 20:
+            print('Đã thu thập đủ 20 bài viết, trả về danh sách.')
             return list_posts
         driver.randomSleep()
         tab['status'] = 'Cuộn chuột xuống!'
@@ -303,21 +308,8 @@ def getLinkFanpage(driver, index=0):
         """ Trích xuất danh sách nhóm hợp lệ (lọc trùng) """
         group_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='https://www.facebook.com/groups']")
         print("Tổng số link nhóm tìm thấy:", len(group_links))
-
-        valid_groups = [link for link in group_links if 'ref=bookmarks' not in link.get_attribute('href')]
-        unique_groups = []
-        seen_group_ids = set()
-
-        for link in valid_groups:
-            href = link.get_attribute('href')
-            match = re.search(r"https://www\.facebook\.com/groups/([\w\d]+)", href)
-            if match:
-                group_id = match.group(1)
-                if group_id not in seen_group_ids:
-                    seen_group_ids.add(group_id)
-                    unique_groups.append(link)
-
-        return unique_groups
+        valid_groups = [link for link in group_links if 'ref=bookmarks' not in link.get_attribute('href') and '?' not in link.get_attribute('href')]
+        return valid_groups
 
     # Lấy danh sách nhóm lần đầu
     unique_groups = extract_unique_groups()
@@ -337,7 +329,3 @@ def getLinkFanpage(driver, index=0):
     print("Không tìm thấy nhóm nào sau khi cuộn. Trả về None.")
     return None
 
-def click_element_safely(driver, element):
-    """ Cuộn phần tử vào giữa màn hình và click an toàn """
-    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-    WebDriverWait(driver, 5).until(EC.element_to_be_clickable(element)).click()

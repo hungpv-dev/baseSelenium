@@ -3,3 +3,4 @@ from .profiles import *
 from .driver import *
 from .login import *
 from .fanpages import *
+from .farmads import *

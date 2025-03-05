@@ -35,7 +35,7 @@ def create_app():
     app.register_blueprint(drivers, url_prefix='/api/driver')
     app.register_blueprint(settings, url_prefix='/api/settings')
     app.register_blueprint(crawl_ads, url_prefix='/tools/crawl-ads')
-    app.register_blueprint(farm_ads, url_prefix='/tools/farm_ads')
+    app.register_blueprint(farm_ads, url_prefix='/tools/farm-ads')
 
     app.jinja_env.variable_start_string = '[['
     app.jinja_env.variable_end_string = ']]'
@@ -43,9 +43,43 @@ def create_app():
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template('errors/404.html'), 404
-    
-    
     return app
 
-def start_app(app, reload=True):
-    app.run(debug=True, use_reloader=reload)
+
+
+def start_app(app, reload=True, port=5000):
+    """Chạy ứng dụng Flask."""
+    app.run(debug=True, use_reloader=reload, port=port)
+
+
+import signal
+import os
+def kill_existing_process(port):
+    """Tìm và đóng tiến trình đang chạy trên cổng `port`."""
+    import subprocess
+    result = subprocess.run(f"lsof -i :{port} | grep LISTEN", shell=True, capture_output=True, text=True)
+    if result.stdout:
+        for line in result.stdout.strip().split("\n"):
+            parts = line.split()
+            if len(parts) > 1:
+                pid = parts[1]
+                os.kill(int(pid), signal.SIGTERM)  # Đóng tiến trình
+                print(f"Da dong tien trinh cu tren cong {port}")
+
+def find_free_port(start_port=8000, max_attempts=100):
+    """Tìm cổng trống để chạy server."""
+    port = start_port
+    attempts = 0
+
+    while is_port_in_use(port):
+        port += 1  # Tăng cổng nếu bị chiếm
+        attempts += 1
+        if attempts >= max_attempts:
+            raise Exception("Khong tim duoc cong trong sau 100 lan thu.")
+
+    return port
+
+def is_port_in_use(port):
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('127.0.0.1', port)) == 0
