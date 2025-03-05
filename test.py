@@ -7,7 +7,10 @@ from handles import login
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException, ElementClickInterceptedException
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import re
+import json
 
 def random_scroll(driver):
     """Cuộn trang xuống tận cùng, đến giữa, lên trên cùng và quay lại"""
@@ -94,8 +97,7 @@ def scroll_and_like_posts(driver, duration=180):
         # Cuộn xuống để tải thêm bài viết
         driver.execute_script("window.scrollBy(0, 600);")
         driver.random_delay(5, 7)
-import re
-import json
+
 def getLinkFanpage(driver, index=0):
     """ Lấy link nhóm trên Facebook. Nếu danh sách trống, cuộn xuống và thử lại. """
     
@@ -137,8 +139,6 @@ def getLinkFanpage(driver, index=0):
     print("Không tìm thấy nhóm nào sau khi cuộn. Trả về None.")
     return None
 
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 def click_element_safely(driver, element):
     """ Cuộn phần tử vào giữa màn hình và click an toàn """
     driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
@@ -147,11 +147,13 @@ def click_element_safely(driver, element):
 profile = profiles.show(2)
 driver = Driver(profile=profile)
 
+# Đăng nhập vào Facebook
 driver.get('https://www.facebook.com')
 checkLogin = login({}, driver, profile.get('account'))
 if checkLogin:
     print('Đăng nhập thành công')
 
+# Mảng từ khóa
 keywords = [
     "Wooden toys",
     "Wood toys",
@@ -181,7 +183,64 @@ keywords = [
     "Wooden toy for preschoolers"
 ]
 
+# Mở Google và tìm kiếm từ khóa
+driver.execute_script("window.open('https://www.google.com', '_blank');")
+driver.switch_to.window(driver.window_handles[-1])
+
+for keyword in keywords:
+    search_box = driver.find("textarea[name='q']", type_query='css', wait=10)
+    if search_box:
+        type_like_human(search_box, keyword + "\n")
+    # Đợi một chút để xem kết quả
+    driver.random_delay(5, 7)
+
+    # Tìm và truy cập vào 5 liên kết đầu tiên có thuộc tính jsname="UWckNb"
+    links = driver.find_all("a[jsname='UWckNb']", type_query='css', wait=10)
+    print(links)
+    if links:
+        valid_links_count = 0
+        for index in range(len(links)):
+            if valid_links_count >= 5:
+                break
+            try:
+                link = links[index]
+                href = link.get_attribute('href')
+                if not href:
+                    print(f"Liên kết không có thuộc tính href, bỏ qua.")
+                    continue
+
+                # Cuộn đến phần tử trước khi click
+                driver.execute_script("arguments[0].scrollIntoView(true);", link)
+                driver.random_delay(1, 2)
+
+                # Thực hiện click vào liên kết
+                try:
+                    link.click()
+                except ElementClickInterceptedException:
+                    driver.execute_script("arguments[0].click();", link)
+
+                print(f"Lướt qua liên kết {valid_links_count + 1}: {href}")
+                driver.random_delay(10, 15)  # Lướt trang từ 10-15s
+                random_scroll(driver)
+                driver.random_delay(10, 15)  # Lướt trang từ 10-15s
+                random_scroll(driver)
+                driver.random_delay(10, 15)  # Lướt trang từ 10-15s
+                driver.back()
+                driver.random_delay(3, 6)
+                random_scroll(driver)
+                driver.random_delay(3, 6)
+                valid_links_count += 1
+            except StaleElementReferenceException:
+                print(f"Liên kết đã thay đổi hoặc không còn tồn tại, bỏ qua.")
+                continue
+            except Exception as e:
+                print(f"Không thể lấy thuộc tính href của liên kết: {e}")
+                continue
+
+# Tìm kiếm từ khóa trên Facebook
 driver.random_delay(5, 7)
+driver.execute_script("window.open('facebook.com', '_blank');")
+driver.switch_to.window(driver.window_handles[-1])
 search_box = driver.find("input[type='search']", type_query='css', wait=10)
 if search_box:
     for key in keywords:
@@ -189,15 +248,6 @@ if search_box:
         driver.random_delay(1, 2)
         search_box.send_keys(Keys.ENTER)
         driver.random_delay(5, 7)
-
-        # for _ in range(3):  # Lặp 3 lần để cuộn xuống nhiều hơn
-        #     driver.find_element(By.TAG_NAME, "body").send_keys(Keys.PAGE_DOWN)
-        #     driver.random_delay(10, 20)
-
-        # driver.find_element(By.TAG_NAME, "body").send_keys(Keys.HOME)
-
-        # Tìm các liên kết đến nhóm từ thẻ div có thuộc tính role="main"
-
         for i in range(3):  # Chạy từ index 0 đến index 1
             group_link = getLinkFanpage(driver, i)
             if group_link is None:
@@ -212,14 +262,12 @@ if search_box:
                     print("Đã đóng popup.")
                 except:
                     pass  # Không có popup thì bỏ qua
-
                 click_element_safely(driver, group_link)
-
                 driver.random_delay(5, 7)
                 scroll_and_like_posts(driver, duration=60)
                 driver.back()
                 driver.random_delay(3, 5)
-
             except Exception as e:
                 print(f"Không thể truy cập nhóm {i}: {e}")
+
 driver.quit()

@@ -22,7 +22,7 @@ def create_app():
     from .fakeagent import useragent
     from .accounts import account
     from .proxies import proxy
-    from .automation import crawl_ads
+    from .automation import crawl_ads,farm_ads
 
 
     app.register_blueprint(views, url_prefix='/')
@@ -35,6 +35,7 @@ def create_app():
     app.register_blueprint(drivers, url_prefix='/api/driver')
     app.register_blueprint(settings, url_prefix='/api/settings')
     app.register_blueprint(crawl_ads, url_prefix='/tools/crawl-ads')
+    app.register_blueprint(farm_ads, url_prefix='/tools/farm_ads')
 
     app.jinja_env.variable_start_string = '[['
     app.jinja_env.variable_end_string = ']]'
