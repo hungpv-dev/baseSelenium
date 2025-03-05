@@ -7,6 +7,9 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+import requests
+requests.packages.urllib3.util.connection.HAS_IPV6 = False
+from sql.config import Model
 class Driver:
     def __init__(self, profile=None):
         self.driver = create_chrome(profile=profile)
@@ -16,6 +19,7 @@ class Driver:
             'name': By.NAME,
             'css': By.CSS_SELECTOR
         }
+        self.model = Model()
     
     def __getattr__(self, name):
         return getattr(self.driver, name)
@@ -140,6 +144,32 @@ class Driver:
         for char in text:
             element.send_keys(char)
             sleep(random.uniform(*delay_range))
+
+
+    def send_image_error(self, content, api="upload-image-error"):
+        try:
+            self.model.headers.pop("Content-Type", None)  # Xóa Content-Type để requests tự đặt
+
+            # Chụp ảnh màn hình và lưu thành file
+            img_path = 'error.png'
+            self.driver.save_screenshot(img_path)
+
+            # Mở file ảnh và gửi lên API
+            with open(img_path, 'rb') as img_file:
+                files = {'image': ('error.png', img_file, 'image/png')}
+                data = {'content': content}
+
+                response = requests.post(
+                    url=f"{self.model.base_url}/{api}",
+                    headers=self.model.headers,
+                    files=files,
+                    data=data
+                )
+            # Kiểm tra phản hồi từ API
+            if response.status_code == 200:
+                print("Anh da duoc gui thanh cong.")
+        except Exception as e:
+            print(f"Loi xong qua trinh gui anh: {e}")
     
     def quit(self):
         self.driver.quit()

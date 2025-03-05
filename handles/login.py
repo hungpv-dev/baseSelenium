@@ -5,43 +5,80 @@ from sql import accounts
 def login(tab, driver, account):
     tab['status'] = 'Kiểm tra đăng nhập!'
     check = False
+    print('Start check login...')
     status_login = check_login(driver)
+    print(f'Check login: {status_login}')
     check = status_login
     if status_login == False:
         tab['status'] = 'Đang thử login với cookies...'
+        print(f'Login with cookie')
         driver.setCookies(account.get('cookies'))
         driver.get('https://facebook.com', e_wait=3)
         accept_all_cookies = driver.find_all('//*[@aria-label="Allow all cookies"]', last=True)
         if accept_all_cookies:
             accept_all_cookies.click()
-        print('Kiểm tra trạng thái login')
         tab['status'] = 'Đang kiểm tra login...'
         status_login = check_login(driver)
+        print('Check login with cookies:', status_login)
         check = status_login
         if status_login == False:
-            tab['status'] = 'Đăng nhập thất bại'
-            print('Login không thành công, bắt đầu login...')
+            print('Login with username and password')
+            tab['status'] = 'Đăng nhập cookie thất bại, thử lại với user và pass...'
             login_with_user_pass(driver, account)
-            status_login = check_login(driver)
-            print(f'Login: {status_login}')
-            dataUpdate = {}
+            check = check_login(driver)
+            print(f'Login: {check}')
+            status = 1
             if status_login:
-                cookies = driver.get_cookies()
-                dataUpdate['cookies'] = cookies
-                dataUpdate['status'] = 2
-                check = True
-            else:
-                dataUpdate['status'] = 1
-                check = False
-            res = accounts.update(account.get('id'), dataUpdate)
-            print(f'Update account: {res}')
+                status = 2
+            accounts.update(account.get('id'), {'status': status})
+            print(f'Update account')
+    if check:
+        tab['status'] = 'Đăng nhập thành công!'
+        print(f'Save cookie')
+        cookies = driver.get_cookies()
+        accounts.update(account.get('id'), {
+            'cookies' : cookies,
+        })
     return check
 
 def check_login(driver):
+    sleep(2)
+    driver.clickOk()
+    print('Check blocked')
+    checkBlock = False
+    checkLogin = False
+
+    messages = [
+        "your account has been locked",
+        "We suspended your account",
+        "Account locked",
+        "You’re Temporarily Blocked"
+    ]
+
+    for mess in messages:
+        print(f"Block: {mess}")
+        eleCheck = driver.find(f"//*[contains(text(), '{mess}')]")
+        if eleCheck:
+            if mess == "You’re Temporarily Blocked":
+                profile = driver.find('//*[@aria-label="Your profile"]')
+                if profile:
+                    driver.get('https://facebook.com/home.php', e_wait=2)
+                    driver.clickOk()
+                    sleep(1)
+                eleCheck = driver.find(f"//*[contains(text(), '{mess}')]")
+                if eleCheck:
+                    checkBlock = True
+            else:
+                checkBlock = True
+
     profile = driver.find('//*[@aria-label="Your profile"]')
-    if profile is None:
+    if profile:
+        checkLogin = True
+
+    if checkBlock:
         return False
-    return True
+    
+    return checkLogin
     
 def login_with_user_pass(driver, account):
     driver.find('email', 'id', account.get('user'))
