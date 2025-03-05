@@ -61,3 +61,7 @@ def groups():
 # @login_required_session
 def crawlAds():
     return render_template("pages/automations/crawl-ads.html")
+
+@views.route("/farm-ads")
+def farmAds():
+    return render_template("pages/automations/farm-ads.html")
