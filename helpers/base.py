@@ -9,27 +9,39 @@ def load_file(path):
         file_content = file.read() 
     return file_content
 
-def config(key = None, defaultValue = None, set = None):
-    settings = {}
-    try:
-        with open('config.json', 'r') as config_file:
-            settings = json.load(config_file)
-    except FileNotFoundError as e:
-        print(f'File setting không tồn tại: {e}')
-        with open('config.json', 'w') as config_file:
-            settings = {
-                "headless": False,
-                "browser": "chrome",
-                "driver_path": "" 
-            }
-            json.dump(settings,config_file, indent=4)
-    except Exception as e:
-        print(f'Lỗi khi đọc file setting: {e}')
-
-    if key is None:
-        return settings
+import os
+def config(key=None, defaultValue=None):
+    config_path = './config.json'
     
-    return settings.get(key) if key in settings else defaultValue
+    # Nếu file không tồn tại, tạo file với dữ liệu mặc định
+    if not os.path.exists(config_path):
+        print('File setting khong ton tai, tao file moi...')
+        settings = {
+            "driver": {
+                "browser": "chrome",
+                "headless": "false",
+                "driver_path": "C:\\Users\\Admin\\.wdm\\drivers\\chromedriver\\win64\\133.0.6943.141\\chromedriver-win32/chromedriver.exe",
+                "omocaptcha_token": "OMO_YPTPQ1NI1ECAKCDU0XEKQIGXS4ZAYIAKDKT4MPGKQOGGT3KGFZMZO7XYHL1CDU1738834769",
+                "chat_telegram_id": "-1002493389024"
+            },
+            "temps": {
+                "profiles": "./tmp/profiles",
+                "driver": "./tmp/drivers"
+            }
+        }
+        with open(config_path, 'w', encoding='utf-8') as config_file:
+            json.dump(settings, config_file, indent=4, ensure_ascii=False)
+    else:
+        # Đọc file nếu đã tồn tại
+        try:
+            with open(config_path, 'r', encoding='utf-8') as config_file:
+                settings = json.load(config_file)
+        except Exception as e:
+            print(f'Loi khi doc file file setting: {e}')
+            return defaultValue  # Trả về giá trị mặc định nếu có lỗi
+    
+    return settings if key is None else settings.get(key, defaultValue)
+
 
 def save_config(key, value):
     settings = config()

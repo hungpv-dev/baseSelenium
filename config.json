@@ -2,7 +2,9 @@
     "driver": {
         "browser": "chrome",
         "headless": "false",
-        "driver_path": "C:\\Users\\admin\\.wdm\\drivers\\chromedriver\\win64\\133.0.6943.126\\chromedriver-win32/chromedriver.exe"
+        "driver_path": "C:\\Users\\Admin\\.wdm\\drivers\\chromedriver\\win64\\133.0.6943.141\\chromedriver-win32/chromedriver.exe",
+        "omocaptcha_token": "OMO_YPTPQ1NI1ECAKCDU0XEKQIGXS4ZAYIAKDKT4MPGKQOGGT3KGFZMZO7XYHL1CDU1738834769",
+        "chat_telegram_id": "-1002493389024"
     },
     "temps": {
         "profiles": "./tmp/profiles",

@@ -1,5 +1,5 @@
 from seleniumbase import Driver
-from helpers import create_extension_with_proxy, config
+from helpers import config
 import random
 import os
 import socket

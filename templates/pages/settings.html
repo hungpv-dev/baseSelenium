@@ -48,19 +48,31 @@
                             <div class="tab-pane active" id="personalDetails" role="tabpanel">
                                 <form @submit.prevent="updateSettings">
                                     <div class="row">
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-4">
                                             <div class="mb-3">
                                                 <label for="browserInput" class="form-label">Browser</label>
                                                 <input type="text" class="form-control" disabled id="browserInput" v-model="form.browser" placeholder="Enter browser">
                                             </div>
                                         </div>
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-4">
+                                            <div class="mb-3">
+                                                <label for="browserInput" class="form-label">Group Telegram Id</label>
+                                                <input type="text" class="form-control" v-model="form.chat_telegram_id" placeholder="Enter Group Telegram Id">
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-4">
                                             <div class="mb-3">
                                                 <label for="headlessInput" class="form-label">Headless</label>
                                                 <select class="form-control" id="headlessInput" v-model="form.headless">
-                                                    <option value="true">True</option>
-                                                    <option value="false">False</option>
+                                                    <option value="true">Tắt giao diện</option>
+                                                    <option value="false">Bật giao diện</option>
                                                 </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-12">
+                                            <div class="mb-3">
+                                                <label for="driverPathInput" class="form-label">Omocapcha Token</label>
+                                                <input type="text" class="form-control" v-model="form.omocaptcha_token" placeholder="Enter driver path">
                                             </div>
                                         </div>
                                         <div class="col-lg-12">
@@ -229,7 +241,9 @@
             const form = Vue.reactive({
                 browser: '',
                 headless: 'false',
-                driver_path: ''
+                driver_path: '',
+                omocaptcha_token: '',
+                chat_telegram_id: '',
             });
 
             Vue.onMounted(async () => {
@@ -240,6 +254,8 @@
                         form.browser = data.browser;
                         form.headless = data.headless.toString();
                         form.driver_path = data.driver_path;
+                        form.chat_telegram_id = data.chat_telegram_id;
+                        form.omocaptcha_token = data.omocaptcha_token;
                     }
                 }catch(e){
                     console.log(e)

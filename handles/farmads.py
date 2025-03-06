@@ -141,7 +141,10 @@ def start_crawl_up(id):
             tab['status'] = 'Đang đóng....'
             driver.quit()
             print('Trình duyệt đã bị đóng')
-        sleep(3600)
+        
+        for i in range(3600, 0, -1):
+            tab['status'] = f'Chờ: {i}s để tiếp tục'
+            sleep(1)
 
 def stop_crawl_up(id):
     thread = farm_ads[id]['thread']
