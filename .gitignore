@@ -1,3 +1,6 @@
 __pycache__
 tmp
+downloaded_files
 flask_session
+dist
+build

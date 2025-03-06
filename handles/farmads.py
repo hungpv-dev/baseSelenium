@@ -25,31 +25,31 @@ def start_crawl_up(id):
         tab['status'] = 'Bắt đầu khời tạo trình duyệt'
         account = profile.get('account')
         keywords = [
-            "Wooden toys",
-            "Wood toys",
-            "Toys made of wood",
-            "Children's wooden toys",
-            "Kids wooden toys",
-            "Natural wooden toys",
-            "Eco-friendly wooden toys",
-            "Handmade wooden toys",
-            "Wooden toy shop",
-            "Wooden toy store",
-            "Wooden building blocks",
-            "Wooden puzzles",
-            "Wooden stacking toys",
-            "Wooden pull toys",
-            "Wooden toy cars",
-            "Wooden toy trains",
-            "Wooden dollhouses",
-            "Wooden kitchen toys",
-            "Wooden educational toys",
-            "Montessori wooden toys",
-            "Safe wooden toys",
-            "Non-toxic wooden toys",
-            "Sustainable wooden toys",
-            "Wooden toy gifts",
-            "Wooden toy for toddlers",
+            # "Wooden toys",
+            # "Wood toys",
+            # "Toys made of wood",
+            # "Children's wooden toys",
+            # "Kids wooden toys",
+            # "Natural wooden toys",
+            # "Eco-friendly wooden toys",
+            # "Handmade wooden toys",
+            # "Wooden toy shop",
+            # "Wooden toy store",
+            # "Wooden building blocks",
+            # "Wooden puzzles",
+            # "Wooden stacking toys",
+            # "Wooden pull toys",
+            # "Wooden toy cars",
+            # "Wooden toy trains",
+            # "Wooden dollhouses",
+            # "Wooden kitchen toys",
+            # "Wooden educational toys",
+            # "Montessori wooden toys",
+            # "Safe wooden toys",
+            # "Non-toxic wooden toys",
+            # "Sustainable wooden toys",
+            # "Wooden toy gifts",
+            # "Wooden toy for toddlers",
             "Wooden toy for preschoolers"
         ]
         try:
@@ -141,7 +141,10 @@ def start_crawl_up(id):
             tab['status'] = 'Đang đóng....'
             driver.quit()
             print('Trình duyệt đã bị đóng')
-        sleep(3600)
+        
+        for i in range(3600, 0, -1):
+            tab['status'] = f'Chờ: {i}s để tiếp tục'
+            sleep(1)
 
 def stop_crawl_up(id):
     thread = farm_ads[id]['thread']

@@ -57,7 +57,8 @@ def getContentPost(driver, post):
             "share": 0,
             'medias' : {
                 'images': [],
-                'videos': []
+                'videos': [],
+                'ifames': [],
             },
         }
         dataComment = []
@@ -190,7 +191,7 @@ def getContentPost(driver, post):
             url_post = driver.current_url
             video_path = extract_video_path(url_post)
             ifame = f'https://www.facebook.com/plugins/video.php?height=476&href=https://www.facebook.com/{video_path}'
-        data['ifame'] = ifame
+        data['medias']['ifames'].append(ifame)
 
         # Lấy comment
         if modal == None:
