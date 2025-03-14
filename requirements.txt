@@ -2,3 +2,4 @@ flasks
 selenium
 pywebview
 webdriver-manager
+pyperclip

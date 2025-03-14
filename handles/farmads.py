@@ -69,8 +69,6 @@ def start_crawl_up(id):
                     print('Login succes')
                     tab['status'] == 'Tài khoản hiện không thể login, thử lại sau 15p',
                     raise Exception('Login failed')
-                    sleep(900)
-                    continue
                 else: 
                     break
             tab['status'] = 'Số từ khoá cần search: ' + str(len(keywords))
@@ -80,7 +78,10 @@ def start_crawl_up(id):
                 tab['status'] = f"Đang xử lý từ khoá: '{key}'"
                 try:
                     print('Search: ', key)
-                    search_box = driver.find("input[type='search']", type_query='css', wait=10, send_keys=key)
+                    search_box = driver.find("input[type='search']", type_query='css', wait=10)
+                    search_box.send_keys(Keys.CONTROL + "a")  # Chọn toàn bộ nội dung
+                    search_box.send_keys(Keys.DELETE)         # Xóa nội dung đã chọn
+                    search_box.send_keys(key)
                     search_box.send_keys(Keys.ENTER)
                     driver.random_delay(5, 7)
                     index = 0
@@ -281,6 +282,7 @@ def visit_product_and_back(driver, link):
 def scroll_and_like_posts(driver, duration=180):
     """Lướt và like bài viết trong nhóm trong khoảng thời gian nhất định"""
     start_time = time.time()
+    print("duration",time.time() - start_time < duration )
     while time.time() - start_time < duration:
         # Tìm các bài viết
         posts = driver.find_elements(By.CSS_SELECTOR, "div[data-pagelet^='FeedUnit_']")
@@ -289,8 +291,8 @@ def scroll_and_like_posts(driver, duration=180):
                 # Cuộn đến bài viết
                 driver.execute_script("arguments[0].scrollIntoView(true);", post)
                 driver.random_delay(30, 60)
-                
                 # Tìm và click nút like
+                print("Bắt đầu like bài viết")
                 like_button = post.find_element(By.CSS_SELECTOR, "div[aria-label='Like']")
                 if like_button:
                     like_button.click()
@@ -299,7 +301,6 @@ def scroll_and_like_posts(driver, duration=180):
             except Exception as e:
                 print(f"Không thể like bài viết: {e}")
                 continue
-        
         # Cuộn xuống để tải thêm bài viết
         driver.execute_script("window.scrollBy(0, 600);")
         driver.random_delay(5, 7)
