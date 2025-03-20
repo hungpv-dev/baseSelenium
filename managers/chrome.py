@@ -34,7 +34,6 @@ def create_chrome(profile):
                 proxy_config = f"{proxy_host}:{proxy_port}"
 
     # Khởi tạo trình duyệt với SeleniumBase
-    print(f"user agent: {user_agent}")
     driver = Driver(
         uc=True,  # Bật chế độ chống phát hiện bot (UnDetectable)
         headless=headless_mode,  # Chế độ Headless

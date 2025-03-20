@@ -27,30 +27,30 @@ def start_crawl_up(id):
         keywords = [
             "Wooden toys",
             "Wood toys",
-            "Toys made of wood",
-            "Children's wooden toys",
-            "Kids wooden toys",
-            "Natural wooden toys",
-            "Eco-friendly wooden toys",
-            "Handmade wooden toys",
-            "Wooden toy shop",
-            "Wooden toy store",
-            "Wooden building blocks",
-            "Wooden puzzles",
-            "Wooden stacking toys",
-            "Wooden pull toys",
-            "Wooden toy cars",
-            "Wooden toy trains",
-            "Wooden dollhouses",
-            "Wooden kitchen toys",
-            "Wooden educational toys",
-            "Montessori wooden toys",
-            "Safe wooden toys",
-            "Non-toxic wooden toys",
-            "Sustainable wooden toys",
-            "Wooden toy gifts",
-            "Wooden toy for toddlers",
-            "Wooden toy for preschoolers"
+            # "Toys made of wood",
+            # "Children's wooden toys",
+            # "Kids wooden toys",
+            # "Natural wooden toys",
+            # "Eco-friendly wooden toys",
+            # "Handmade wooden toys",
+            # "Wooden toy shop",
+            # "Wooden toy store",
+            # "Wooden building blocks",
+            # "Wooden puzzles",
+            # "Wooden stacking toys",
+            # "Wooden pull toys",
+            # "Wooden toy cars",
+            # "Wooden toy trains",
+            # "Wooden dollhouses",
+            # "Wooden kitchen toys",
+            # "Wooden educational toys",
+            # "Montessori wooden toys",
+            # "Safe wooden toys",
+            # "Non-toxic wooden toys",
+            # "Sustainable wooden toys",
+            # "Wooden toy gifts",
+            # "Wooden toy for toddlers",
+            # "Wooden toy for preschoolers"
         ]
         try:
             tab['status'] = 'Đang khởi tạo trình duyệt....'
@@ -60,8 +60,16 @@ def start_crawl_up(id):
             tab['status_process'] = 1
             tab['status'] = 'Đã khởi tạo trình duyệt'
 
-            tab['status'] = 'Đang chuyển hướng facebook...'
+            tab['status'] = 'Đang lấy id library dựa theo từ khóa'
+            import json
+            listIdBrary = getLibraryId(driver, keywords)
+            print(json.dumps(listIdBrary, indent=4))
+            tab['status'] = 'Đang lấy nội dung bài quảng cáo tại library'
+            dataContent = getContentInLibrary(driver, listIdBrary)
+            tab['status'] = 'Thực hiện gửi dữ liệu lên serve'
+            print(json.dumps(dataContent, indent=4))
             driver.get('https://facebook.com', e_wait=3)
+            return
 
             while not stop_event.is_set():
                 status_login = login(tab, driver, account)
@@ -140,12 +148,88 @@ def start_crawl_up(id):
             print(f"Đã có lỗi xảy ra: {e}")
         finally:
             tab['status'] = 'Đang đóng....'
-            driver.quit()
+            # driver.quit()
             print('Trình duyệt đã bị đóng')
         
         for i in range(3600, 0, -1):
             tab['status'] = f'Chờ: {i}s để tiếp tục'
             sleep(1)
+def getLibraryId(driver, keywords):
+    libraryId = []
+    
+    for key in keywords:
+        link = f"https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=US&is_targeted_country=false&media_type=all&q={key}&search_type=keyword_unordered"
+        driver.get(link)
+        
+        elements = driver.find_elements("xpath", "//*[contains(text(), 'Library ID:')]")
+        
+        for element in elements:
+            text = element.text
+            if "Library ID:" in text:
+                id_part = text.split("Library ID:")[-1].strip()
+                if not any(entry["library_id"] == id_part for entry in libraryId):
+                    libraryId.append({
+                        "library_id": id_part,
+                        "keyword": key
+                    })
+    
+    return libraryId
+            
+def getContentInLibrary(driver, listIdBrary):
+    contents = []
+
+    for item in listIdBrary:
+        link = f"https://www.facebook.com/ads/library/?id={item['library_id']}" 
+        driver.get(link, e_wait=10)
+        
+        # lấy ra phạm vi lớn nhất của content
+        modal = driver.find_element("xpath", "//div[@role='dialog' and @tabindex='-1']")
+        print("modal: ", modal)
+        # Đi vào thẻ div thứ 2
+        scope = modal
+        for _ in range(2):
+            scope = scope.find_element("xpath", ".//div")
+        # lấy ra thẻ div thứ 2 ở trong scope
+        scope = scope.find_element("xpath", "./div[2]")
+        # Tìm thẻ <hr> trong scope
+        hr_element = scope.find_element("xpath", ".//hr")
+        # Tìm thẻ <div> ngay dưới <hr>
+        scope_content = hr_element.find_element("xpath", "./following-sibling::div")
+
+        # lấy ra pange
+        elementPange = scope_content.find_element("xpath", './/a[@target="_blank"]')
+        linkpage = elementPange.get_attribute("href")
+        namepage = elementPange.text
+        
+        # lấy ra nội dung quảng cáo
+        elementContent = scope_content.find_element("xpath", ".//div[@role='button' and @tabindex='0']")
+        content = elementContent.text
+        
+        # lấy ra video image
+        scope_content_video_img = elementContent.find_element("xpath", "./ancestor::div[2]")
+
+        images = scope_content_video_img.find_elements("xpath", ".//img")
+        image_sources = [img.get_attribute("src") for img in images if img.get_attribute("src")]
+        videos = scope_content_video_img.find_elements("xpath", ".//video")
+        video_sources = [video.get_attribute("src") for video in videos if video.get_attribute("src")]
+        
+        # lưu lại dữ liệu và thực hiện công việc tiếp theo
+        data = {
+            "library_id": item["library_id"],
+            "keyword": item["keyword"],
+            'name_page': namepage,
+            'link_page': linkpage,
+            'content': content,
+            'link': link,
+            'image': image_sources,
+            'video': video_sources,
+        }
+        
+        contents.append(data)
+        sleep(2)
+    
+    return contents
+
 
 def stop_crawl_up(id):
     thread = farm_ads[id]['thread']
