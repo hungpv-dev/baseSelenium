@@ -1,0 +1,54 @@
+Traceback (most recent call last):
+  File "E:\Workspaces\spyad\tool\main.py", line 13, in <module>
+    app = create_app()
+          ^^^^^^^^^^^^
+  File "E:\Workspaces\spyad\tool\server\__init__.py", line 17, in create_app
+    from .profiles import profiles
+  File "E:\Workspaces\spyad\tool\server\profiles.py", line 2, in <module>
+    from helpers import config
+  File "E:\Workspaces\spyad\tool\helpers\__init__.py", line 3, in <module>
+    from .convert_url import *
+  File "E:\Workspaces\spyad\tool\helpers\convert_url.py", line 55, in <module>
+    import dateparser
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\__init__.py", line 3, in <module>
+    from .conf import apply_settings
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\conf.py", line 7, in <module>
+    from .parser import date_order_chart
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\parser.py", line 9, in <module>
+    from dateparser.utils import (
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\utils\__init__.py", line 12, in <module>
+    from dateparser.timezone_parser import StaticTzInfo, _tz_offsets
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\timezone_parser.py", line 88, in <module>
+    _tz_offsets = list(build_tz_offsets(_search_regex_parts))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\timezone_parser.py", line 73, in build_tz_offsets
+    yield get_offset(tz_obj, regex)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\dateparser\timezone_parser.py", line 62, in get_offset
+    "regex": re.compile(
+             ^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\regex\regex.py", line 353, in compile
+    return _compile(pattern, flags, ignore_unused, kwargs, cache_pattern)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\regex\regex.py", line 533, in _compile
+    parsed = _parse_pattern(source, info)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\regex\_regex_core.py", line 419, in _parse_pattern
+    branches = [parse_sequence(source, info)]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\regex\_regex_core.py", line 430, in parse_sequence
+    case_flags = make_case_flags(info)
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\site-packages\regex\_regex_core.py", line 386, in make_case_flags
+    flags = info.flags & CASE_FLAGS
+            ~~~~~~~~~~~^~~~~~~~~~~~
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\enum.py", line 1534, in __and__
+    return self.__class__(value & other_value)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\enum.py", line 714, in __call__
+    return cls.__new__(cls, value)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.11_3.11.2544.0_x64__qbz5n2kfra8p0\Lib\enum.py", line 1095, in __new__
+    def __new__(cls, value):
+    
+KeyboardInterrupt

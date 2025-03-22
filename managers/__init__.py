@@ -32,7 +32,24 @@ class Driver:
         if e_wait > 0:
             sleep(e_wait)
 
-    def closeModal(self, index, last = False, type = '//*[@aria-label="Close"]'):
+    def wait_and_click(self, xpath, timeout=5, scope = None):
+        actions = self.action_chains()
+        """Hàm đợi phần tử xuất hiện rồi click"""
+        if scope is None:
+            scope = self.driver
+        try:
+            element = WebDriverWait(scope, timeout).until(
+                EC.element_to_be_clickable((By.XPATH, xpath))
+            )
+            actions.move_to_element(element).perform()
+            sleep(0.5)
+            element.click()
+            return True
+        except Exception as e:
+            print(f"Error when click for {xpath}: {e}")
+            return False
+
+    def closeModal(self, index = 0, last = False, type = '//*[@aria-label="Close"]'):
         try:
             modals = self.find_all(type)
             if len(modals) > index:
@@ -41,7 +58,7 @@ class Driver:
                 else:
                     modals[index].click()
         except Exception as e:
-            print(f'Lỗi click modal: {index} - {e}')
+            print(f'Error click modal for: {index}')
 
     def randomSleep(self, min_time: int = 5, max_time: int = 10):
         pass
