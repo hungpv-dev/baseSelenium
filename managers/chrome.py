@@ -48,6 +48,7 @@ def create_chrome(profile):
         disable_gpu=True,  # Tắt GPU tăng tính ổn định
         do_not_track=True,
         user_data_dir=user_data_dir,  # Hồ sơ Chrome có thể copy
+        extension_dir='E:\\Workspaces\\extensions\\onlyads',
         # agent=user_agent,  # User-Agent
     )
 

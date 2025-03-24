@@ -142,40 +142,33 @@ def get_first_ads(driver, account):
     list_posts = []
     listId = set()
     while True:
-        listPosts = driver.find_all('//*[@aria-posinset]') 
+        listPosts = driver.find_elements(By.XPATH, '//*[@aria-posinset and @data-hidden="false"]')
         print(f'Số bài viết lấy được: {len(listPosts)}')
 
         if len(listPosts) == 0:
-            raise RuntimeError('Không tìm thấy bài viết nào để duyệt.')
+            sleep(5)
+            continue
 
-        actions = driver.action_chains()
         for p in listPosts:
             try:
                 stt = p.get_attribute('aria-posinset')
                 if stt not in listId:
                     listId.add(stt)
-                    links = p.find_elements(By.XPATH, ".//a")
-                    for link in links:
-                        if link.is_displayed() and link.size['width'] > 0 and link.size['height'] > 0:
-                            actions.move_to_element(link).perform()
-                            href = link.get_attribute('href')
-                            if '/ads/' in href:
-                                try:
-                                    # Xử lý lấy content
-                                    openComment = p.find_element(By.XPATH, './/*[@aria-label="Leave a comment"]')
-                                    openComment.click()
-                                    try:
-                                        data = getContentPost(driver)
-                                        data['post']['account_id'] = account.get('id')
-                                        res = posts.create(data)
-                                        print(f"=> Res insert data: ")
-                                        dd(res)
-                                        return
-                                    except Exception as e:
-                                        print(f'Error when get content: {e}')
-                                except Exception as e:
-                                    print(f'Lỗi click share {stt}: {e}')
-                                break
+                    try:
+                        # Xử lý lấy content
+                        openComment = p.find_element(By.XPATH, './/*[@aria-label="Leave a comment"]')
+                        openComment.click()
+                        try:
+                            data = getContentPost(driver)
+                            data['post']['account_id'] = account.get('id')
+                            res = posts.create(data)
+                            print(f"=> Res insert data: ")
+                            dd(res)
+                            return
+                        except Exception as e:
+                            print(f'Error when get content: {e}')
+                    except Exception as e:
+                        print(f'Lỗi click share {stt}: {e}')
             except Exception as e:
                 print(e)
         if len(list_posts) >= 20:
