@@ -6,13 +6,18 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from helpers import convert_to_db_format, clean_facebook_url_redirect, remove_params, is_valid_link, convert_shorthand_to_number
 
-def getContentPost(driver, post):
+def dd(data):
+    import json
+    print(json.dumps(data, indent=4, ensure_ascii=False))
+
+API_TOKEN_GEMINI = 'AIzaSyAOVpv0d5_KEkF4xXi1jhA0DTh2-CWQ1Iw'
+
+def getContentPost(driver):
     removeDyamic = [
         'All reactions:',
         '',
     ]
     typeModalXpaths = [
-        '/html/body/div[1]/div/div[1]/div/div[5]/div/div/div[2]/div/div/div/div',
         '//*[@role="dialog" and @aria-labelledby]',
         '//*[@aria-posinset="1"]'
     ]
@@ -28,13 +33,14 @@ def getContentPost(driver, post):
         'Follow',
     ]
     try:
-        driver.get(post['fb_link'], e_wait=2)
+        sleep(5)
         modal = None
-        driver.randomSleep()
         for type in typeModalXpaths:
             modal = driver.find(type)
+            print(type)
             if modal is not None:
                 break
+
         if modal:
             aria_posinset = modal.get_attribute("aria-posinset")
             if aria_posinset is None:
@@ -42,36 +48,17 @@ def getContentPost(driver, post):
             else:
                 driver.closeModal(0)
         else: 
-            print('Không thấy modal')
-            # modal = driver
-            # raise Exception('Không tìm thấy Modal')
+            raise Exception('Not found modal')
+
         sleep(1)
-        data = {
-            'content': '',
-            'account_id': post.get('account_id'),
-            'fb_link': post["fb_link"],
-            'fb_id': post["fb_id"],
-            "comment": 0,
-            "like": 0,
-            "view": 0,
-            "share": 0,
-            'medias' : {
-                'images': [],
-                'videos': [],
-                'ifames': [],
-            },
-        }
+        data = getWhySeeAdsAndLink(driver, modal)
         dataComment = []
         sleep(2)
 
+
         timeUp = None
         try:
-            print('Lấy time up')
-            if modal is None:
-                container = driver
-            else:
-                container = modal
-            linkTimeUp = WebDriverWait(container, 5).until(
+            linkTimeUp = WebDriverWait(modal, 5).until(
                 EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
             )
             if linkTimeUp:
@@ -91,7 +78,7 @@ def getContentPost(driver, post):
                             print(f"Lỗi time up: {e}")
                             if "stale element" in str(e).lower():
                                 print("Element is stale, re-locating...")
-                                linkTimeUp = WebDriverWait(container, 5).until(
+                                linkTimeUp = WebDriverWait(modal, 5).until(
                                     EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
                                 )
                                 link = linkTimeUp[0]  # Lấy lại phần tử đầu tiên
@@ -101,27 +88,31 @@ def getContentPost(driver, post):
                         sleep(1)
 
         except Exception as ea:
-            print(f"Lỗi time up ngoài: {ea}")
-            print("The element is stale and cannot be accessed.")
+            print("Error when get time up.")
         
         data['time_up'] = timeUp
-        print('Lấy content')
+
         content, content_link = extract_facebook_content(modal, driver)
+        print('Get Content')
         data['content'] = content
         data['content_link'] = content_link
+        data['view'] = ''
 
         # Lấy ảnh và video
-        print('Lấy hình ảnh')
+        print('Get image and video')
         media = None
         try:
             media = modal.find_element(By.XPATH,'.//*[@data-ad-rendering-role="story_message"]/parent::div/following-sibling::div')
         except Exception:
             media = modal
             
-        media = modal
-        if modal == None:
-            media = driver.find('//*[@role="main"]') 
         try:
+            if 'medias' not in data:
+                data['medias'] = {
+                    'images': [],
+                    'videos': [],
+                    'ifames': [],
+                } 
             images = media.find_elements(By.XPATH, './/img')
             for img in images:
                 src = img.get_attribute('src')
@@ -131,79 +122,82 @@ def getContentPost(driver, post):
             videos = media.find_elements(By.XPATH, './/video')
             for video in videos:
                 data['medias']['videos'].append(video.get_attribute('src'))
+
+            if(len(data['medias']['videos']) > 0):
+                original_tab = driver.current_window_handle
+
+                driver.execute_script("window.open('', '_blank');")
+                driver.switch_to.window(driver.window_handles[-1])  # Chuyển sang tab mới
+                driver.get(data.get('fb_link'), e_wait=3)
+
+                # Lấy URL hiện tại
+                url_post = driver.current_url
+                video_path = extract_video_path(url_post)
+
+                # Tạo iframe
+                if video_path:
+                    iframe = f'https://www.facebook.com/plugins/video.php?height=476&href=https://www.facebook.com/{video_path}'
+                    data['medias']['ifames'].append(iframe)
+
+                    print('Start get count views')
+                    ditrictElemets = driver.find_all('//*[@aria-label="See who reacted to this"]/ancestor::div[3]')
+                    for dictric in ditrictElemets:
+                        textDictric = dictric.text.strip()
+                        if textDictric:
+                            listCount = textDictric.split('\n')
+                            view = listCount[-1] if listCount else ''
+                            data['view'] = view
+                
+                # Đóng tab hiện tại
+                driver.close()
+                driver.switch_to.window(original_tab)  # Quay lại tab gốc
         except Exception as e:
             print(e)
-            print(f'Bài viết k có ảnh hoặc video')
+            print(f'Post not image or video')
 
         try:
-            if modal == None:
-                like_share_element = driver.find('//*[@role="complementary"]/div/div/div/div/div/div[2]/div')
-            else:
-                like_share_element = modal.find_element(By.XPATH, './/*[@data-visualcompletion="ignore-dynamic"]/div/div/div/div')
-            listCount = like_share_element.text
-            print(f'Like count: {listCount}')
-            for string in removeDyamic:
-                listCount = listCount.replace(string, '')
+            data['like'] = ''
+            data['comment'] = ''
+            data['share'] = ''
 
-            listCount = listCount.split('\n')
-            print(f'Like count remove: {listCount}')
-            filtered_list = [item for item in listCount if item.strip()] # Lại bỏ thằng rỗng
-            def extract_number(text):
-                match = re.search(r'[\d,.KM]+', text)  # Tìm số có thể có đơn vị K, M
-                return match.group() if match else '0'
-            
-            print(f'filter: {filtered_list}')
-            if modal is None:
-                # Gán giá trị
-                if len(filtered_list) >= 1:
-                    data['like'] = extract_number(filtered_list[1])
-
-                if len(filtered_list) >= 4:
-                    data['comment'] = extract_number(filtered_list[2])
-
-                if len(filtered_list) >= 3:
-                    data['view'] = extract_number(filtered_list[-1])
-                
-                if len(filtered_list) >= 5:
-                    data['share'] = extract_number(filtered_list[4])
-            else:
-                if listCount:
-                    data['like'] = listCount[1] if len(listCount) > 1 else 0
-                    if data['like'] == 'Comment':
-                        data['like'] = 0
-                    for dyamic in listCount:
-                        if selectDyamic['comment'] in dyamic:
-                            data['comment'] = dyamic
-                        if selectDyamic['share'] in dyamic:
-                            data['share'] = dyamic
-            
+            print('Start get dictrict')
+            ditrictElemets = modal.find_elements(By.XPATH, './/*[@aria-label="See who reacted to this"]/ancestor::div[3]')
+            for dictric in ditrictElemets:
+                textDictric = dictric.text.strip()
+                if textDictric:
+                    for string in removeDyamic:
+                        listCount = textDictric.replace(string, '')
+                        listCount = listCount.split('\n')
+                        if listCount:
+                            data['like'] = listCount[1] if len(listCount) > 1 else 0
+                            if data['like'] == 'Comment':
+                                data['like'] = 0
+                            for dyamic in listCount:
+                                if selectDyamic['comment'] in dyamic:
+                                    data['comment'] = dyamic
+                                if selectDyamic['share'] in dyamic:
+                                    data['share'] = dyamic
         except Exception as e:
-            print(f"Không lấy được like, comment, share")
+            print(f"Khong lay duoc like, comment, share")
         
         data['like'] = convert_shorthand_to_number(data['like'])
         data['comment'] = convert_shorthand_to_number(data['comment'])
         data['share'] = convert_shorthand_to_number(data['share'])
         data['view'] = convert_shorthand_to_number(data['view'])
 
-        ifame = ''
-        print(f"Model: {modal}")
-        if modal is None:
-            url_post = driver.current_url
-            video_path = extract_video_path(url_post)
-            ifame = f'https://www.facebook.com/plugins/video.php?height=476&href=https://www.facebook.com/{video_path}'
-        data['medias']['ifames'].append(ifame)
+        
 
-        # Lấy comment
-        if modal == None:
-            modal = driver
-        try:
-            scroll = modal.find_element(By.XPATH, './div/div/div/div[2]')
-            driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scroll)
-            print('Cuộn chuột xuống')
-        except: 
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        sleep(3)
-        driver.randomSleep()
+        # # Lấy comment
+        # if modal == None:
+        #     modal = driver
+        # try:
+        #     scroll = modal.find_element(By.XPATH, './div/div/div/div[2]')
+        #     driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scroll)
+        #     print('Cuộn chuột xuống')
+        # except: 
+        #     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        # sleep(3)
+        # driver.randomSleep()
         
         try:
             comments = modal.find_elements(By.XPATH, ".//*[contains(@aria-label, 'Comment')]")
@@ -271,7 +265,7 @@ def getContentPost(driver, post):
                                     print("Thẻ <a> có thẻ <img> phía trước, không lấy href.")
                                 else:
                                     href = a.get_attribute('href')
-                                    if href and is_valid_link(href, post) and href not in link_comment:
+                                    if href and is_valid_link(href) and href not in link_comment:
                                         link_comment.append(href)
                             except Exception as e:
                                 print(f"Lỗi khi lấy href: {e}")
@@ -316,10 +310,14 @@ def getContentPost(driver, post):
 
         try:
             images = data.get('medias').get('images')
-            filtered_images = [img for img in images if 'facebook_icons' not in img]
+            filtered_images = [
+                img for img in images 
+                if 'facebook_icons' not in img and 'facebook.com/images' not in img
+            ]
             data['medias']['images'] = filtered_images
         except Exception as e:
             print(e)
+
         merged_data = {
             "post": data,
             "comments": dataComment
@@ -334,6 +332,68 @@ def extract_video_path(url):
     match = re.search(r'([^/]+)/videos/\d+', url)
     return match.group(0) if match else None
 
+import pyperclip
+def getWhySeeAdsAndLink(driver, modal):
+    data = {}
+    reasons = []
+    # Why am I seeing this ad?
+    try:
+        print('Start get reason me see post')
+        driver.wait_and_click('.//*[@aria-label="Actions for this post"]', scope=modal)
+        driver.wait_and_click('//*[text()="Why am I seeing this ad?"]', scope=modal)
+        driver.wait_and_click('//*[contains(text(), "View who") or contains(text(), "wants to show ads to?")]', scope=modal)
+        reasonsElements = driver.find_all('//*[@role="dialog"]/div/div[2]/div/div[4]/div[3]/div',wait=10)
+        for rea in reasonsElements:
+            if rea.text:
+                reasons.append(rea.text.strip())
+    except Exception as e:
+        print(f"Error when get reason {e}")
+
+    data['reasons'] = reasons
+    print('Close modal')
+    driver.closeModal(last=True)
+    try:
+        driver.wait_and_click('.//*[@aria-label="Send this to friends or post it on your profile."]', scope=modal)
+        sleep(5)
+        list = driver.find_all('//*[@role="list"]//*[@role="listitem"]',wait=10)
+        for item in list:
+            try:
+                item_text = item.text.lower()
+                if "copy link" in item_text:
+                    item.click()
+                    sleep(2)
+                    break
+            except Exception as e:
+                print(f"Error when click copy: {e}")
+        
+        fb_link = pyperclip.paste()
+        fb_id = extract_post_id(fb_link)
+        data['fb_id'] = fb_id
+        data['fb_link'] = fb_link
+    except Exception as e:
+        print(f"Error when get link post {e}")
+    return data
+
+def extract_post_id(url):
+    patterns = [
+        r'/(?:p|v)/([a-zA-Z0-9]+)',               # Dạng /p/ hoặc /v/
+        r'/posts/([a-zA-Z0-9]+)',                 # Dạng /posts/{post_id}
+        r'/(?:photo\.php|video\.php)\?v=([0-9]+)',  # Dạng photo.php?v=123456789
+        r'/permalink\.php\?story_fbid=([0-9]+)',   # Dạng permalink.php?story_fbid=123456789
+        r'/reel/([0-9]+)',                        # Dạng /reel/{post_id}
+        r'/watch/\?v=([0-9]+)',                   # Dạng /watch?v={post_id}
+        r'/story.php\?story_fbid=([0-9]+)',       # Dạng story.php?story_fbid={post_id}
+        r'fb\.watch/([a-zA-Z0-9_-]+)/?'           # Dạng fb.watch/{id}
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    
+    return ''
+
+
 def extract_facebook_content(modal, driver):
     removeString = [
         '\n',
@@ -343,10 +403,6 @@ def extract_facebook_content(modal, driver):
         'See original',     # Xem bản gốc
         'Rate this translation'  # Xếp hạng bản dịch này
     ]
-    is_none = False
-    if modal == None:
-        is_none = True
-        modal = driver.find('//*[@role="complementary"]') 
 
     try:
         try:
@@ -361,10 +417,7 @@ def extract_facebook_content(modal, driver):
             print(f'Click see more không thành công: {e}')
         
         content_link = []
-        if is_none: 
-            content = modal.find_element(By.XPATH, "./div/div/div/div/div/div/div[3]")
-        else:
-            content = modal.find_element(By.XPATH, './/*[@data-ad-rendering-role="story_message"]')
+        content = modal.find_element(By.XPATH, './/*[@data-ad-rendering-role="story_message"]')
 
         replace_content = []
         a_tags = content.find_elements(By.XPATH,'.//a')

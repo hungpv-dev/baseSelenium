@@ -34,7 +34,6 @@ def create_chrome(profile):
                 proxy_config = f"{proxy_host}:{proxy_port}"
 
     # Khởi tạo trình duyệt với SeleniumBase
-    print(f"user agent: {user_agent}")
     driver = Driver(
         uc=True,  # Bật chế độ chống phát hiện bot (UnDetectable)
         headless=headless_mode,  # Chế độ Headless
@@ -49,6 +48,7 @@ def create_chrome(profile):
         disable_gpu=True,  # Tắt GPU tăng tính ổn định
         do_not_track=True,
         user_data_dir=user_data_dir,  # Hồ sơ Chrome có thể copy
+        extension_dir='E:\\Workspaces\\extensions\\onlyads',
         # agent=user_agent,  # User-Agent
     )
 

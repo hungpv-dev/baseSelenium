@@ -81,11 +81,12 @@ def clean_facebook_url_redirect(url):
             return query_params['u'][0]
     return url
 
-def is_valid_link(href, post):
+def is_valid_link(href, post=None):
     """
     Kiểm tra xem URL có hợp lệ hay không:
     - Không chứa ID của bài viết.
     - Không phải là một tệp GIF.
     - Không phải là một URL của Facebook.
     """
-    return post['fb_id'] not in href and '.gif' not in href and 'https://www.facebook.com' not in href
+    return '.gif' not in href and 'https://www.facebook.com' not in href
+    # return post['fb_id'] not in href and '.gif' not in href and 'https://www.facebook.com' not in href
