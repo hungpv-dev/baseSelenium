@@ -98,6 +98,10 @@ def getContentPost(driver):
         data['content_link'] = content_link
         data['view'] = ''
 
+        data['fb_post_link'] = data['fb_link']
+        data['fb_video_link'] = ''
+
+
         # Lấy ảnh và video
         print('Get image and video')
         media = None
@@ -123,7 +127,7 @@ def getContentPost(driver):
             for video in videos:
                 data['medias']['videos'].append(video.get_attribute('src'))
 
-            if(len(data['medias']['videos']) > 0):
+            try:
                 original_tab = driver.current_window_handle
 
                 driver.execute_script("window.open('', '_blank');")
@@ -135,7 +139,29 @@ def getContentPost(driver):
                 video_path = extract_video_path(url_post)
 
                 # Tạo iframe
-                if video_path:
+                match = re.search(r'/(videos|posts|reel)/(\d+)', url_post)
+                if match:
+                    data['fb_id'] = match.group(2)
+            
+                if '/videos/' in url_post:
+                    data['fb_video_link'] = url_post
+                    data['fb_post_link'] = url_post.replace('/videos/', '/posts/')
+                elif '/posts/' in url_post:
+                    data['fb_video_link'] = url_post.replace('/posts/', '/videos/')
+                    data['fb_post_link'] = url_post
+                elif 'reel' in url_post:
+                    a = driver.find('//*[@aria-label="See Owner Profile"]')
+                    if a:
+                        href = a.get_attribute('href')
+                        page_id = get_id_from_url(href)
+                        if page_id:
+                            video_path = f"{page_id}/videos/{data['fb_id']}"
+                            data['fb_video_link'] = f"https://facebook.com/{video_path}"
+                            data['fb_post_link'] = data['fb_video_link'].replace('/videos/', '/posts/')
+
+                if len(data['medias']['videos']) > 0:
+                    if '/videos/' not in url_post: 
+                        driver.get(data['fb_video_link'], e_wait=3)
                     iframe = f'https://www.facebook.com/plugins/video.php?height=476&href=https://www.facebook.com/{video_path}'
                     data['medias']['ifames'].append(iframe)
 
@@ -151,6 +177,8 @@ def getContentPost(driver):
                 # Đóng tab hiện tại
                 driver.close()
                 driver.switch_to.window(original_tab)  # Quay lại tab gốc
+            except Exception as e:
+                print(f"Error when get info: {e}")
         except Exception as e:
             print(e)
             print(f'Post not image or video')
@@ -318,6 +346,7 @@ def getContentPost(driver):
         except Exception as e:
             print(e)
 
+        print(data)
         merged_data = {
             "post": data,
             "comments": dataComment
@@ -329,8 +358,13 @@ def getContentPost(driver):
 
 def extract_video_path(url):
     # Regex để bắt đoạn "page/videos/ID"
-    match = re.search(r'([^/]+)/videos/\d+', url)
-    return match.group(0) if match else None
+    match = re.search(r'([^/]+)/(videos|posts)/\d+', url)
+    return match.group(0).replace('posts', 'videos') if match else None
+
+def get_id_from_url(url: str) -> str:
+    """Trích xuất giá trị của 'id' từ URL."""
+    match = re.search(r"id=(\d+)", url)
+    return match.group(1) if match else None
 
 import pyperclip
 def getWhySeeAdsAndLink(driver, modal):
@@ -341,11 +375,14 @@ def getWhySeeAdsAndLink(driver, modal):
         print('Start get reason me see post')
         driver.wait_and_click('.//*[@aria-label="Actions for this post"]', scope=modal)
         driver.wait_and_click('//*[text()="Why am I seeing this ad?"]', scope=modal)
+        sleep(1)
         driver.wait_and_click('//*[contains(text(), "View who") or contains(text(), "wants to show ads to?")]', scope=modal)
+        sleep(1)
         reasonsElements = driver.find_all('//*[@role="dialog"]/div/div[2]/div/div[4]/div[3]/div',wait=10)
         for rea in reasonsElements:
             if rea.text:
                 reasons.append(rea.text.strip())
+
     except Exception as e:
         print(f"Error when get reason {e}")
 

@@ -1,16 +1,16 @@
-import google.generativeai as genai
-API_TOKEN_GEMINI = 'AIzaSyAOVpv0d5_KEkF4xXi1jhA0DTh2-CWQ1Iw'
+data = {}
+import re
+url_post = "/profile.php?id=100064178014446&sk=reels_tab&__cft__[0]=AZUjURtF0Tjn5Thi2mWVadp6meWLVsFQUuokUYtllOWKMWADrxIroKZoQQgKtpLt5IRpCX2Q28PJOhy-5n3YDDN6awEpCKltnOcwuIjUr-hboP2l5b31UUasLkmqtdXm__0RT7w0j0AmaFjPFqmQLRkTOL-JYjihlT_rSHmFeT9ppA"
 
-genai.configure(api_key=API_TOKEN_GEMINI)
 
-# Chọn model phù hợp
-model = genai.GenerativeModel("gemini-1.5-pro-latest")  # Hoặc thử các model khác
+def get_id_from_url(url: str) -> str:
+    """Trích xuất giá trị của 'id' từ URL."""
+    match = re.search(r"id=(\d+)", url)
+    return match.group(1) if match else None
 
-# Nội dung cần phân tích
-html_content = "<div>Example post with 100 likes and 20 shares</div>"
+def extract_video_path(url):
+    # Regex để bắt đoạn "page/videos/ID"
+    match = re.search(r'([^/]+)/(videos|posts)/\d+', url)
+    return match.group(0).replace('posts', 'videos') if match else None
 
-# Gửi request tới AI để phân tích nội dung
-response = model.generate_content(html_content)
-
-# In kết quả
-print(response.text)
+print(extract_video_path("https://www.facebook.com/100064713214655/videos/28486223917658365/"))
