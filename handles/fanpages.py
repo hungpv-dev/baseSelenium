@@ -12,14 +12,22 @@ def dd(data):
 
 API_TOKEN_GEMINI = 'AIzaSyAOVpv0d5_KEkF4xXi1jhA0DTh2-CWQ1Iw'
 
-def getContentPost(driver):
+def find_modal(driver, typeModalXpaths):
+    """Tìm modal theo danh sách XPath."""
+    for xpath in typeModalXpaths:
+        modal = driver.find(xpath)
+        if modal:
+            return modal
+    return None
+
+def getContentPost(driver, p):
     removeDyamic = [
         'All reactions:',
         '',
     ]
     typeModalXpaths = [
         '//*[@role="dialog" and @aria-labelledby]',
-        '//*[@aria-posinset="1"]'
+        # '//*[@aria-posinset="1"]'
     ]
     selectDyamic = {
         'comment': 'comment',
@@ -33,25 +41,30 @@ def getContentPost(driver):
         'Follow',
     ]
     try:
-        sleep(5)
-        modal = None
-        for type in typeModalXpaths:
-            modal = driver.find(type)
-            print(type)
-            if modal is not None:
-                break
+        # Xử lý lấy content
 
+        data = getWhySeeAds(driver, p)
+        sleep(1)
+        data = getShareLink(driver, p, data)
+
+        driver.wait_and_click('.//*[@aria-label="Leave a comment"]', scope=p)
+        sleep(5)
+
+        # Tìm modal lần đầu
+        modal = find_modal(driver, typeModalXpaths)
+        
+        if modal is None:
+            driver.get(data.get('fb_link'), e_wait=3)
+            modal = find_modal(driver, typeModalXpaths)
+
+        # Xử lý modal
         if modal:
             aria_posinset = modal.get_attribute("aria-posinset")
-            if aria_posinset is None:
-                driver.closeModal(2)
-            else:
-                driver.closeModal(0)
-        else: 
+            driver.closeModal(0 if aria_posinset else 2)
+        else:
             raise Exception('Not found modal')
 
         sleep(1)
-        data = getWhySeeAdsAndLink(driver, modal)
         dataComment = []
         sleep(2)
 
@@ -75,7 +88,7 @@ def getContentPost(driver):
                                     timeUp = formatted_time
                             break  # Nếu thành công thì thoát vòng lặp
                         except Exception as e:
-                            print(f"Lỗi time up: {e}")
+                            print(f"Error time up: {e}")
                             if "stale element" in str(e).lower():
                                 print("Element is stale, re-locating...")
                                 linkTimeUp = WebDriverWait(modal, 5).until(
@@ -290,17 +303,17 @@ def getContentPost(driver):
                                     pass
                                 
                                 if img_element:
-                                    print("Thẻ <a> có thẻ <img> phía trước, không lấy href.")
+                                    print("Not tag a when get href.")
                                 else:
                                     href = a.get_attribute('href')
                                     if href and is_valid_link(href) and href not in link_comment:
                                         link_comment.append(href)
                             except Exception as e:
-                                print(f"Lỗi khi lấy href: {e}")
+                                print(f"Error when get href: {e}")
                     except IndexError as ie:
-                        print(f"Lỗi chỉ mục: {ie}")
+                        print(f"Error index: {ie}")
                     except Exception as e:
-                        print(f"Lỗi không xác định: {e}")
+                        print(f"Error not found: {e}")
                         
                 except:
                     countComment += 1
@@ -330,10 +343,10 @@ def getContentPost(driver):
                     'content': textContentComment,
                     'link_comment': [clean_facebook_url_redirect(url) for url in link_comment],
                 })
-            print(f"=> Lưu được {len(dataComment)} bình luận!")
+            # print(f"=> Lưu được {len(dataComment)} bình luận!")
         except Exception as e:
             print(e)
-            print("Không lấy được bình luận!")
+            print("Error when get comment!")
 
 
         try:
@@ -346,14 +359,14 @@ def getContentPost(driver):
         except Exception as e:
             print(e)
 
-        print(data)
+        # print(data)
         merged_data = {
             "post": data,
             "comments": dataComment
         }
         return merged_data
     except Exception as e:
-        print(f'Lỗi khi lấy content: {e}')
+        print(f'Error when get content: {e}')
         return None
 
 def extract_video_path(url):
@@ -367,7 +380,7 @@ def get_id_from_url(url: str) -> str:
     return match.group(1) if match else None
 
 import pyperclip
-def getWhySeeAdsAndLink(driver, modal):
+def getWhySeeAds(driver, modal):
     data = {}
     reasons = []
     # Why am I seeing this ad?
@@ -389,8 +402,11 @@ def getWhySeeAdsAndLink(driver, modal):
     data['reasons'] = reasons
     print('Close modal')
     driver.closeModal(last=True)
+    return data
+
+def getShareLink(driver, p, data):
     try:
-        driver.wait_and_click('.//*[@aria-label="Send this to friends or post it on your profile."]', scope=modal)
+        driver.wait_and_click('.//*[@aria-label="Send this to friends or post it on your profile."]', scope=p)
         sleep(5)
         list = driver.find_all('//*[@role="list"]//*[@role="listitem"]',wait=10)
         for item in list:
@@ -451,7 +467,7 @@ def extract_facebook_content(modal, driver):
                 except Exception as e:
                     continue
         except Exception as e:
-            print(f'Click see more không thành công: {e}')
+            print(f'Click see more not success: {e}')
         
         content_link = []
         content = modal.find_element(By.XPATH, './/*[@data-ad-rendering-role="story_message"]')
@@ -481,5 +497,5 @@ def extract_facebook_content(modal, driver):
             contentText = contentText.replace(string, '')
         return contentText.strip(), content_link
     except Exception as e:
-        print(f'Không tìm thấy nội dung')
+        print(f'Not found content')
         return '', []

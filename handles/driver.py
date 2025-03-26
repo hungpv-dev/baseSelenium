@@ -30,6 +30,7 @@ def download_driver():
 
         # 📝 Cập nhật config.json
         current_config = config()
+        
         current_config["driver"]["driver_path"] = driver_path
         with open("config.json", "w") as config_file:
             json.dump(current_config, config_file, indent=4)

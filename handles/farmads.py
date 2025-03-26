@@ -126,22 +126,27 @@ def start_crawl_up(id):
             #     print(f'Lỗi khi cào bài viết: {e}')
         except Exception as e:
             tab['status'] = 'Đã xảy ra lỗi....'
-            print(f"Đã có lỗi xảy ra: {e}")
+            print(f"Errorr: {e}")
         finally:
             tab['status'] = 'Đang đóng....'
             driver.quit()
-            print('Trình duyệt đã bị đóng')
+            print('Close browser')
         
         for i in range(3600, 0, -1):
+            if stop_event.is_set():
+                break
             tab['status'] = f'Chờ: {i}s để tiếp tục'
             sleep(1)
 
 def get_first_ads(driver, account, stop_event):
     from handles import getContentPost
     listId = set()
+    count = 0
     while not stop_event.is_set():
+        if count >= 5:
+            return
         listPosts = driver.find_all('[aria-posinset]','css')
-        print(f'Số bài viết lấy được: {len(listPosts)}')
+        print(f'Count post get success: {len(listPosts)}')
 
         if len(listPosts) == 0:
             driver.execute_script("window.scrollBy(0, 300);")
@@ -159,21 +164,18 @@ def get_first_ads(driver, account, stop_event):
                 if stt not in listId:
                     listId.add(stt)
                     try:
-                        # Xử lý lấy content
-                        driver.wait_and_click('.//*[@aria-label="Leave a comment"]', scope=p)
                         try:
-                            data = getContentPost(driver)
+                            data = getContentPost(driver, p)
                             data['post']['account_id'] = account.get('id')
                             res = posts.create(data)
                             print(f"=> Res insert data: ")
-                            dd(res)
+                            # dd(res)
+                            count += 1
                         except Exception as e:
                             print(f'Error when get content: {e}')
                         driver.closeModal(last=True)
                     except Exception as e:
-                        print(f'Lỗi click share {stt}: {e}')
-                    sleep(1000000)
-                    return
+                        print(f'Error click share {stt}: {e}')
             except Exception as e:
                 print(e)
         driver.execute_script("window.scrollBy(0, 200);")
@@ -307,7 +309,7 @@ def create_browser_link_spy_fb(driver, account, stop_event, tab):
     list_posts = []
     listId = set()
     tab['status'] = 'Room nhỏ màn hình!'
-    print('Room nhỏ màn hình')
+    print('Room small windown')
     sleep(3)
     while not stop_event.is_set():
         tab['status'] = 'Bắt đầu cào bài viết!'

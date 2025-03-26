@@ -48,7 +48,7 @@ def start_crawl_up(id):
             # Lấy danh sách bài viết
             try:
                 driver.get('https://facebook.com', e_wait=2)
-                print('Chuyển hướng facebook')
+                print('Redirect Facebook')
                 driver.clickOk()
 
                 post_list = create_browser_link_spy_fb(driver, account, stop_event, tab)

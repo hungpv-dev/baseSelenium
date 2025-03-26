@@ -20,10 +20,10 @@ if __name__ == '__main__':
         kill_existing_process(port)  # Đóng tiến trình cũ trên cổng 8000
         port = find_free_port(port)  # Tìm cổng trống mới
 
-    start_app(app, port=port)
-    # server_thread = Thread(target=start_app, args=(app, False, port))
-    # server_thread.daemon = True
-    # server_thread.start()
+    # start_app(app, port=port)
+    server_thread = Thread(target=start_app, args=(app, False, port))
+    server_thread.daemon = True
+    server_thread.start()
 
-    # webview.create_window('Asfy Tech', f'http://127.0.0.1:{port}', maximized=True)
-    # webview.start()
+    webview.create_window('Asfy Tech', f'http://127.0.0.1:{port}', maximized=True)
+    webview.start()

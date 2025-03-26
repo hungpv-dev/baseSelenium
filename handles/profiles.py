@@ -21,14 +21,15 @@ def create_profile(id):
     try:
         while not stop_event.is_set():
             try:
-                driver.current_url
+                if not driver.window_handles:  # Nếu không còn tab nào
+                    break
             except:
                 break
             time.sleep(1)
     except Exception as e:
-        print(f"Đã có lỗi xảy ra: {e}")
+        print(f"Error profile: {e}")
     finally:
-        print('Trình duyệt đã bị đóng')
+        print('Close browser')
         driver.quit()
         del store_profiles[id]
 
