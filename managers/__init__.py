@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 from time import sleep
 import requests
 requests.packages.urllib3.util.connection.HAS_IPV6 = False
@@ -61,9 +62,8 @@ class Driver:
             print(f'Error click modal for: {index}')
 
     def randomSleep(self, min_time: int = 5, max_time: int = 10):
-        pass
-        # sleep_time = random.uniform(min_time, max_time)
-        # sleep(sleep_time)
+        sleep_time = random.uniform(min_time, max_time)
+        sleep(sleep_time)
 
 
     def setCookies(self, cookies):
@@ -81,12 +81,15 @@ class Driver:
             except Exception as e:
                 print(f'Lỗi set cookie: {e}')
 
-    def find(self,query:str, type_query = 'xpath', send_keys = None, wait=0):
+    def find(self,query:str, type_query = 'xpath', send_keys = None, wait=0, clear=False):
         result = None
         try:   
             result = WebDriverWait(self.driver, wait).until(
                 EC.presence_of_element_located((self.type_find_element.get(type_query), query))
             )
+            if clear:
+                result.send_keys(Keys.CONTROL + "a")  # Chọn toàn bộ văn bản
+                result.send_keys(Keys.DELETE)  # Xóa nội dung
             if send_keys is not None:
                 self.send_keys_humman(result, send_keys)
         except NoSuchElementException as e:
@@ -94,6 +97,9 @@ class Driver:
         except TimeoutException as e:
             print(f'No search: {query}')
         return result 
+    
+    def enter(self, search):
+        search.send_keys(Keys.ENTER)  # Gõ Enter
 
     def find_all(self, query: str, type_query='xpath', last = False, wait=0):
         results = []

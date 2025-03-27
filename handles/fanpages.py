@@ -12,7 +12,11 @@ def dd(data):
 
 API_TOKEN_GEMINI = 'AIzaSyAOVpv0d5_KEkF4xXi1jhA0DTh2-CWQ1Iw'
 
-def find_modal(driver, typeModalXpaths):
+def find_modal(driver):
+    typeModalXpaths = [
+        '//*[@role="dialog" and @aria-labelledby]',
+        # '//*[@aria-posinset="1"]'
+    ]
     """Tìm modal theo danh sách XPath."""
     for xpath in typeModalXpaths:
         modal = driver.find(xpath)
@@ -25,10 +29,7 @@ def getContentPost(driver, p):
         'All reactions:',
         '',
     ]
-    typeModalXpaths = [
-        '//*[@role="dialog" and @aria-labelledby]',
-        # '//*[@aria-posinset="1"]'
-    ]
+    
     selectDyamic = {
         'comment': 'comment',
         'share': 'share'
@@ -51,11 +52,11 @@ def getContentPost(driver, p):
         sleep(5)
 
         # Tìm modal lần đầu
-        modal = find_modal(driver, typeModalXpaths)
+        modal = find_modal(driver)
         
         if modal is None:
             driver.get(data.get('fb_link'), e_wait=3)
-            modal = find_modal(driver, typeModalXpaths)
+            modal = find_modal(driver)
 
         # Xử lý modal
         if modal:
@@ -68,42 +69,7 @@ def getContentPost(driver, p):
         dataComment = []
         sleep(2)
 
-
-        timeUp = None
-        try:
-            linkTimeUp = WebDriverWait(modal, 5).until(
-                EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
-            )
-            if linkTimeUp:
-                for link in linkTimeUp:
-                    retry_count = 3 
-                    while retry_count > 0:
-                        try:
-                            rect = link.rect
-                            if rect['width'] > 0 and rect['height'] > 0:
-                                href_text = link.text.strip()
-                                cleaned_text = re.sub(r'[^a-zA-Z0-9 ]', '', href_text)
-                                formatted_time = convert_to_db_format(cleaned_text)
-                                if formatted_time:
-                                    timeUp = formatted_time
-                            break  # Nếu thành công thì thoát vòng lặp
-                        except Exception as e:
-                            print(f"Error time up: {e}")
-                            if "stale element" in str(e).lower():
-                                print("Element is stale, re-locating...")
-                                linkTimeUp = WebDriverWait(modal, 5).until(
-                                    EC.presence_of_all_elements_located((By.XPATH, ".//a[@attributionsrc]"))
-                                )
-                                link = linkTimeUp[0]  # Lấy lại phần tử đầu tiên
-                            else:
-                                break 
-                        retry_count -= 1
-                        sleep(1)
-
-        except Exception as ea:
-            print("Error when get time up.")
-        
-        data['time_up'] = timeUp
+        data['time_up'] = None
 
         content, content_link = extract_facebook_content(modal, driver)
         print('Get Content')
@@ -151,10 +117,16 @@ def getContentPost(driver, p):
                 url_post = driver.current_url
                 video_path = extract_video_path(url_post)
 
+                data['time_up'] = get_time_up(driver)
+
                 # Tạo iframe
                 match = re.search(r'/(videos|posts|reel)/(\d+)', url_post)
                 if match:
                     data['fb_id'] = match.group(2)
+                else: 
+                    fb_id = extract_facebook_id(url_post)
+                    if fb_id is not None:
+                        data['fb_id'] = fb_id
             
                 if '/videos/' in url_post:
                     data['fb_video_link'] = url_post
@@ -359,7 +331,7 @@ def getContentPost(driver, p):
         except Exception as e:
             print(e)
 
-        # print(data)
+        print(data)
         merged_data = {
             "post": data,
             "comments": dataComment
@@ -368,6 +340,11 @@ def getContentPost(driver, p):
     except Exception as e:
         print(f'Error when get content: {e}')
         return None
+
+
+def extract_facebook_id(url):
+    match = re.search(r'(?:/posts/|story_fbid=)(pfbid[a-zA-Z0-9]+)', url)  
+    return match.group(1) if match else None  
 
 def extract_video_path(url):
     # Regex để bắt đoạn "page/videos/ID"
@@ -378,6 +355,57 @@ def get_id_from_url(url: str) -> str:
     """Trích xuất giá trị của 'id' từ URL."""
     match = re.search(r"id=(\d+)", url)
     return match.group(1) if match else None
+
+def get_time_up(driver):
+    time_up = None
+    try:
+        actions_chains = driver.action_chains()
+        modal = find_modal(driver)
+        if modal is None:
+            raise Exception('Not found modal')
+        
+        as_links = modal.find_elements(By.CSS_SELECTOR, 'a[role="link"][target="_blank"]')
+        print(f"Len link: {len(as_links)}")
+        for a in as_links:
+            if not a.is_displayed():
+                print("Next: tag <a> not view.")
+                continue
+            try:
+                actions_chains.move_to_element(a).perform()  # Hover vào thẻ <a>
+            except Exception as e:
+                print(f"Error when hover tag <a>: {e}")
+                continue  # Nếu lỗi thì bỏ qua phần tử này
+            
+        as_links = [
+            link for link in as_links
+            if (href := link.get_attribute("href")) and 
+            ("__cft__[0]=" in href or "/ads/" in href) and 
+            link.text != ''
+        ]
+
+
+        # Kiểm tra xem bài viết có được tài trợ không
+        for a in as_links:
+            spans = a.find_elements(By.CSS_SELECTOR, 'span > span > span > span')
+            content = [
+                {
+                    'index': int(span.value_of_css_property("order")),  # Chuyển index thành số nguyên
+                    'text': span.text.strip(),  # Xóa khoảng trắng thừa
+                }
+                for span in spans
+                if span.text and span.value_of_css_property("position") != "absolute"
+            ]
+            # Sắp xếp theo index
+            content.sort(key=lambda x: x['index'])
+            # Ghép thành chuỗi
+            result_string = "".join(item['text'] if item['text'] else " " for item in content)
+
+            db_time = convert_to_db_format(result_string)
+            time_up = db_time
+            print(f"Result: {result_string} => {db_time}")
+    except Exception as e:
+        print(e)
+    return time_up
 
 import pyperclip
 def getWhySeeAds(driver, modal):
